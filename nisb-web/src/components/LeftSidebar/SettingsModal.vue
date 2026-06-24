@@ -98,6 +98,7 @@
           :is-default-workspace="is_default_workspace"
           :saved-favorites-count="saved_favorites_count"
           :saved-favorites-preview="saved_favorites_preview"
+          :local-favorites-cleared="local_favorites_cleared"
           v-model:selected-workspace-id="selected_workspace_id"
           v-model:new-ws-icon="new_ws_icon"
           v-model:new-ws-name="new_ws_name"
@@ -114,7 +115,7 @@
           @read-focus-from-local="read_focus_from_local"
           @apply-workspace-files-state-to-ui="apply_workspace_files_state_to_ui"
           @save-workspace-snapshot-from-current="save_workspace_snapshot_from_current"
-          @clear-workspace-files-state="clear_workspace_files_state"
+          @clear-workspace-favorites-local="clear_workspace_favorites_local"
         />
 
         <SettingsLanguageSection v-else-if="tab === 'language'" />
@@ -192,6 +193,11 @@ const rename_ws_name = ref('')
 const saved_focused_preview = ref('')
 const saved_favorites_count = ref(0)
 const saved_favorites_preview = ref([])
+
+// 本地内存态：记录当前 current.favorites（从后端读取），用于清空比对
+const local_current_favorites = ref([])
+// 标记用户已在本 session 内清空常用（未保存），用于 UI 提示
+const local_favorites_cleared = ref(false)
 
 function toast(message, type = 'info') {
   window.dispatchEvent(new CustomEvent('nisb-toast', { detail: { message, type } }))
@@ -816,6 +822,7 @@ async function refresh_workspace_files_state() {
 
     const info = extract_workspace_files_state(data)
     const saved = safe_object(info.files_state?.saved)
+    const current = safe_object(info.files_state?.current)
     const focused = safe_string(saved.focused_root_path).trim()
     const favs = safe_array(saved.favorites)
 
@@ -825,6 +832,10 @@ async function refresh_workspace_files_state() {
       .slice(0, 8)
       .map((x) => safe_string(x?.path).trim())
       .filter(Boolean)
+
+    // 同步后端 current.favorites 到本地内存态（刷新时重置清空标记）
+    local_current_favorites.value = safe_array(current.favorites)
+    local_favorites_cleared.value = false
   } catch (e) {
     toast(tr('workspace.refreshFailed', { error: visible_error(e, 'workspace.refreshWorkspaceFilesStateFailed') }), 'error')
   } finally {
@@ -841,11 +852,28 @@ async function save_workspace_snapshot_from_current() {
   busy.value = true
 
   try {
+    const wid = selected_workspace_id.value
     const path = safe_string(saved_focused_preview.value).trim().replace(/^\/+/, '')
+
+    // 若本地标记了清空常用，需先批量 toggle 取消后端 current.favorites
+    if (local_favorites_cleared.value && local_current_favorites.value.length > 0) {
+      for (const item of local_current_favorites.value) {
+        const item_path = safe_string(item?.path || item).trim()
+        const item_type = safe_string(item?.type || 'file').trim()
+        if (!item_path) continue
+        try {
+          await callTool('nisb_favorites_toggle_file', localized_args({
+            path: item_path,
+            type: item_type,
+            workspace_id: wid
+          }))
+        } catch {}
+      }
+    }
 
     assert_tool_success(
       await callTool('nisb_workspace_files_state_set', localized_args({
-        workspace_id: selected_workspace_id.value,
+        workspace_id: wid,
         focused_root_path: path
       })),
       'workspace.updateCurrentStateFailed'
@@ -853,7 +881,7 @@ async function save_workspace_snapshot_from_current() {
 
     const data = assert_tool_success(
       await callTool('nisb_workspace_files_state_save', localized_args({
-        workspace_id: selected_workspace_id.value
+        workspace_id: wid
       })),
       'workspace.saveSnapshotFailed'
     )
@@ -915,41 +943,19 @@ async function apply_workspace_files_state_to_ui() {
   }
 }
 
-async function clear_workspace_files_state() {
+// 清空常用：仅清本地内存态，不调后端，不影响聚焦目录
+// 保存时才会通过批量 toggle 持久化到后端
+function clear_workspace_favorites_local() {
   if (!workspace_id_safe.value) {
     toast(tr('workspace.invalidWorkspaceIdClear'), 'error')
     return
   }
 
-  const ok = window.confirm(tr('workspace.clearWorkspaceFilesStateConfirm'))
+  const ok = window.confirm(tr('workspace.clearFavoritesConfirm', { fallback: '确认清空常用列表？此操作仅在点击「保存到工作空间」后才会真正生效。' }))
   if (!ok) return
 
-  busy.value = true
-
-  try {
-    const data = assert_tool_success(
-      await callTool('nisb_workspace_files_state_clear', localized_args({
-        workspace_id: selected_workspace_id.value
-      })),
-      'workspace.clearWorkspaceFilesStateFailed'
-    )
-
-    window.dispatchEvent(
-      new CustomEvent('nisb-left-sidebar-switch-tab', {
-        detail: { tab: 'files' }
-      })
-    )
-    window.dispatchEvent(new CustomEvent('nisb_file_clear_focus_root', { detail: {} }))
-    window.dispatchEvent(new CustomEvent('nisb-favorites-refresh'))
-    window.dispatchEvent(new CustomEvent('nisb-file-tree-refresh'))
-
-    toast(get_display_text(data, 'workspace.workspaceFilesStateCleared'), 'success')
-    await refresh_workspace_files_state()
-  } catch (e) {
-    toast(tr('workspace.clearFailed', { error: visible_error(e, 'workspace.clearWorkspaceFilesStateFailed') }), 'error')
-  } finally {
-    busy.value = false
-  }
+  local_favorites_cleared.value = true
+  toast(tr('workspace.favoritesLocalCleared', { fallback: '常用已清空（未保存）。点击「保存到工作空间」以持久化，或点击「应用到 UI」恢复。' }), 'info')
 }
 
 function emit_local_evidence_settings_updated() {
@@ -988,6 +994,8 @@ watch(
       saved_favorites_count.value = 0
       saved_favorites_preview.value = []
       saved_focused_preview.value = ''
+      local_current_favorites.value = []
+      local_favorites_cleared.value = false
 
       if (workspace_id_safe.value) {
         await refresh_workspace_files_state()
