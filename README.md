@@ -2,6 +2,10 @@
 
 **NISB is a self-hosted AI workspace for notes, files, documents, RSS, evidence, Rooms, and MCP capabilities.**
 
+**Demo:** [https://youtu.be/8cEAmJpn0EY](https://youtu.be/8cEAmJpn0EY)
+
+**Support / Remote Install:** [https://ko-fi.com/nisbdev](https://ko-fi.com/nisbdev)
+
 It is also a workspace where Rooms can become callable, shareable, revocable, and composable MCP capabilities.
 
 NISB combines a daily Markdown/file workspace, long-lived knowledge libraries, RSS-to-RAG workflows, evidence-based search, supervisor/worker Rooms, MCP publishing, NISB-to-NISB federation, and a small-VPS deployment model.
@@ -188,12 +192,14 @@ This model is optimized for:
 
 ## Quick start
 
+> For assisted setup, Remote Install is available: [https://ko-fi.com/nisbdev/commissions](https://ko-fi.com/nisbdev/commissions)
+
 A typical manual deployment flow is:
 
 1. Prepare a fresh Ubuntu 24.04 VPS.
 2. Configure DNS, for example through Cloudflare.
 3. Install Docker Engine and Docker Compose v2.
-4. Upload or clone the project to `/opt/mcp-gateway/nisb`.
+4. Clone the project to `/opt/mcp-gateway/nisb`.
 5. Prepare persistent data under `/opt/nisb-data`.
 6. Copy and edit the environment file.
 7. Build and start the services.
