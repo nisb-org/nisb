@@ -951,11 +951,8 @@ function clear_workspace_favorites_local() {
     return
   }
 
-  const ok = window.confirm(tr('workspace.clearFavoritesConfirm', { fallback: '确认清空常用列表？此操作仅在点击「保存到工作空间」后才会真正生效。' }))
-  if (!ok) return
-
   local_favorites_cleared.value = true
-  toast(tr('workspace.favoritesLocalCleared', { fallback: '常用已清空（未保存）。点击「保存到工作空间」以持久化，或点击「应用到 UI」恢复。' }), 'info')
+  toast(tr('workspace.favoritesLocalCleared'), 'info')
 }
 
 function emit_local_evidence_settings_updated() {
