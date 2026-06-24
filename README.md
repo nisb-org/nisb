@@ -153,18 +153,16 @@ This makes a Room more than a conversation. It becomes a reusable, controlled, e
 
 ## What NISB is not
 
-NISB is not intended to be just another ChatGPT-style interface.
+NISB is not a ChatGPT-style chat interface, and it is not a replacement for existing tools.
 
-It is also not positioned as a direct replacement for tools such as LibreChat, Dify, Open WebUI, AnythingLLM, Obsidian, Logseq, Notion, or other AI and PKM platforms.
+A clearer way to understand the positioning:
 
-A better way to understand the difference:
-
-- LibreChat is a strong MCP-capable chat client and AI conversation platform.
+- LibreChat is a capable MCP-aware chat client and conversation platform.
 - Obsidian and Logseq are note-first PKM tools.
-- Dify is a strong workflow and application builder.
+- Dify is a workflow and application builder.
 - NISB focuses on a self-hosted AI workspace with an evidence layer, workspace-aware Rooms, MCP publishing, federation, and composable capability sharing.
 
-NISB can work alongside existing tools. For example, a NISB Room can be published as MCP and called from LibreChat.
+These tools can work alongside NISB. For example, a NISB Room can be published as an MCP capability and called from LibreChat.
 
 ---
 
