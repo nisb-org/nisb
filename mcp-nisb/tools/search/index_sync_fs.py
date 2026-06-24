@@ -1349,6 +1349,18 @@ def sync_dirs_module(
     }
 
 
+def invalidate_hint_cache_for_module(conn, module: str) -> None:
+    """清除指定 module 的 quick_sync hint cache，让下次搜索强制重扫。"""
+    try:
+        conn.execute(
+            "DELETE FROM search_meta WHERE key LIKE ?",
+            (f"quick_sync_hint:{module}:%",),
+        )
+        conn.commit()
+    except Exception:
+        pass
+    
+
 __all__ = [
     "FILE_MODULE_ROOT_CANDIDATES",
     "DIRS_ROOT_CANDIDATES",
