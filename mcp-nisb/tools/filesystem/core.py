@@ -196,6 +196,25 @@ def _backup_line(args: Dict[str, Any], storage_only: bool = True) -> str:
     return _txt(args, "🛡️ Automatic backup created", "🛡️ 已自动备份")
 
 
+def _invalidate_search_hint_cache_after_write(base_path, filename: str) -> None:
+    """文件写入成功后调用，清除搜索 hint cache，保证下次搜索能扫到新文件。"""
+    try:
+        from tools.search.index_sync_fs import invalidate_hint_cache_for_module
+        from tools.search.index_sync import open_index
+        from pathlib import Path
+
+        bp = Path(str(base_path))
+        conn, _ = open_index(bp)
+        fn = str(filename or "").replace("\\", "/")
+        if "documents/" in fn or fn.startswith("documents"):
+            invalidate_hint_cache_for_module(conn, "doc")
+        else:
+            invalidate_hint_cache_for_module(conn, "files")
+        conn.close()
+    except Exception:
+        pass  # 不阻塞文件写入，静默失败
+
+
 def nisb_file_create(args: dict) -> Dict[str, Any]:
     args = _safe_args(args)
     user_id, email, name = _user_fields(args)
@@ -288,6 +307,7 @@ def nisb_file_create(args: dict) -> Dict[str, Any]:
             f.write(content)
 
         print(f"[CREATE] File created: {file_path}")
+        _invalidate_search_hint_cache_after_write(base_path, filename)
 
         _log_operation(
             user_id,
@@ -705,6 +725,7 @@ def nisb_file_update(args: dict) -> Dict[str, Any]:
                         f.write("" if content is None else str(content))
 
                     print(f"[UPDATE] Direct update: {filename}")
+                    _invalidate_search_hint_cache_after_write(base_path, filename)  # ← 新增
 
                     try:
                         _append_timeline_activity(
@@ -793,6 +814,9 @@ def nisb_file_update(args: dict) -> Dict[str, Any]:
             save_history(user_id, metadata["file_id"], old_content, email, name)
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(str(content))
+            _invalidate_search_hint_cache_after_write(  # ← 新增
+                get_base_path(user_id, email, name), metadata["filename"]
+            )
             metadata["size_bytes"] = len(str(content).encode("utf-8"))
             metadata["line_count"] = str(content).count("\n") + 1
             metadata["char_count"] = len(str(content))
@@ -1679,4 +1703,3 @@ def _log_operation(
             f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
     except Exception as e:
         print(f"[WARN] Failed to write operation log: {str(e)}")
-
