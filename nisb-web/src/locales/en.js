@@ -106,14 +106,14 @@ export default {
         refreshPreview: 'Refresh preview',
         copyCurrentLinks: 'Copy current favorite links',
         preview: 'Preview (up to 8): {items}',
-        empty: 'There are no favorite items in the current snapshot yet. Add favorites in the file tree first, then click save to workspace.'
+        empty: 'There are no favorite items in the current snapshot yet. Add favorites in the file tree first, then click save to workspace.',
+        clearedUnsaved: 'Favorites cleared (unsaved) — click "Save to workspace" to persist, or "Apply to UI" to restore.'
       },
       actions: {
         readCurrentFocus: 'Read current focus directory',
         applyToUi: 'Apply to UI',
         saveToWorkspace: 'Save to workspace',
-        clearWorkspaceState: 'Clear workspace file state',
-        clearHint: 'Clearing will remove both the saved snapshot and the current state: focus becomes empty, favorites are cleared, and old global favorites will no longer be auto-filled.'
+        clearFavorites: 'Clear favorites'
       }
     },
     performance: {
@@ -379,10 +379,10 @@ export default {
       appliedToUi: 'Restored and applied to the UI',
       applyFailed: 'Apply failed: {error}',
 
-      clearWorkspaceFilesStateConfirm: 'Clear this workspace’s snapshot and current state?\n\nThis will clear the focus root and the favorites list.',
       clearWorkspaceFilesStateFailed: 'Failed to clear workspace file state',
       workspaceFilesStateCleared: 'Workspace file state cleared',
-      clearFailed: 'Clear failed: {error}'
+      clearFailed: 'Clear failed: {error}',
+      favoritesLocalCleared: 'Favorites cleared (unsaved). Click "Save to workspace" to persist, or "Apply to UI" to restore.'
     },
     conversations: {
       title: 'Conversation history',
