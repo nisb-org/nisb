@@ -18,16 +18,12 @@ import {
 const PAGE_SIZE = 10
 const FETCH_LIMIT = 100
 const SEARCH_DEBOUNCE_MS = 220
-const CACHE_LIMIT = 20
 const FILTERS_STORAGE_KEY = 'nisb_search_panel_filters_v1'
 const DEBUG_STORAGE_KEY = 'nisb_search_panel_debug_v1'
 const DEBUG_PANEL_ALLOWED =
   import.meta.env.DEV === true ||
   String(import.meta.env.VITE_ENABLE_SEARCH_DEBUG_PANEL || '').trim() === '1' ||
   String(import.meta.env.VITE_ENABLE_SEARCH_DEBUG_PANEL || '').trim().toLowerCase() === 'true'
-
-const CACHE_SENSITIVE_CAMEL_RE = /^(?:[A-Z][a-z0-9]+|[a-z][a-z0-9]+)(?:[A-Z][a-z0-9]+){1,}$/
-const CACHE_SENSITIVE_EXT_RE = /\.[A-Za-z0-9]{1,12}$/
 
 function emptyResults() {
   return {
@@ -403,32 +399,6 @@ function extractDebugMeta(info, normalizedPayload, showDebugPanelValue, currentM
   }
 }
 
-function buildSearchCacheKey(rawQuery, normalizedQuery, modules) {
-  return JSON.stringify({
-    q_raw: String(rawQuery || '').trim(),
-    q_norm: String(normalizedQuery || '').trim(),
-    modules: toSafeArray(modules).map((x) => String(x || '').trim()),
-    limit: FETCH_LIMIT,
-    per_module_limit: FETCH_LIMIT,
-    fuzzy: true
-  })
-}
-
-function isCacheSensitiveSearchQuery(rawQuery) {
-  const q = String(rawQuery || '').trim()
-  if (!q) return false
-  if (/\s/.test(q)) return false
-
-  if (q.includes('/') || q.includes('\\')) return true
-  if (q.endsWith('.')) return true
-  if (q.includes('.')) return true
-  if (q.includes('_') || q.includes('-')) return true
-  if (CACHE_SENSITIVE_EXT_RE.test(q)) return true
-  if (CACHE_SENSITIVE_CAMEL_RE.test(q)) return true
-
-  return false
-}
-
 export function useSearchPanelSearch(options = {}) {
   const { callTool } = useMCP()
   const { t } = useI18n()
@@ -458,7 +428,6 @@ export function useSearchPanelSearch(options = {}) {
 
   let searchTimer = null
   let activeSearchId = 0
-  const searchCache = new Map()
 
   function toggleDebugPanel() {
     if (!DEBUG_PANEL_ALLOWED) return
@@ -496,22 +465,6 @@ export function useSearchPanelSearch(options = {}) {
   function cancelPendingAndReset() {
     cancelPendingOnly()
     resetResults()
-  }
-
-  function clearSearchCache() {
-    searchCache.clear()
-  }
-
-  function cacheSet(key, value) {
-    if (!key) return
-    if (searchCache.has(key)) {
-      searchCache.delete(key)
-    }
-    searchCache.set(key, value)
-    while (searchCache.size > CACHE_LIMIT) {
-      const firstKey = searchCache.keys().next().value
-      searchCache.delete(firstKey)
-    }
   }
 
   const hasEnabledCategory = computed(() => {
@@ -631,23 +584,6 @@ export function useSearchPanelSearch(options = {}) {
     }
 
     const modulesSnapshot = [...backendModules.value]
-    const cacheSensitive = isCacheSensitiveSearchQuery(rawTrimmed)
-    const cacheKey = buildSearchCacheKey(rawTrimmed, norm, modulesSnapshot)
-
-    if (!cacheSensitive) {
-      const cached = searchCache.get(cacheKey)
-      if (cached) {
-        if (requestId === activeSearchId) {
-          results.value = cached.results
-          totalResults.value = cached.total
-          normalizedQueryText.value = cached.normalized_query || ''
-          countsState.value = cached.counts || emptyCounts()
-          debugMeta.value = cached.debugMeta || emptyDebugMeta()
-          searching.value = false
-        }
-        return
-      }
-    }
 
     try {
       const result = await callTool('nisb_search_cross_module', {
@@ -674,13 +610,6 @@ export function useSearchPanelSearch(options = {}) {
       normalizedQueryText.value = payload.normalized_query || ''
       countsState.value = payload.counts || emptyCounts()
       debugMeta.value = nextDebugMeta
-
-      if (!cacheSensitive) {
-        cacheSet(cacheKey, {
-          ...payload,
-          debugMeta: nextDebugMeta
-        })
-      }
     } catch (e) {
       if (requestId !== activeSearchId) return
       console.error('[search] failed:', e)
@@ -761,8 +690,7 @@ export function useSearchPanelSearch(options = {}) {
     loadMoreLibrary,
     loadMoreAll,
     cancelPendingOnly,
-    cancelPendingAndReset,
-    clearSearchCache
+    cancelPendingAndReset
   }
 }
 
