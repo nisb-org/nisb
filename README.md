@@ -311,32 +311,6 @@ Commercial licensing, closed-source integration, hosted/SaaS use, private redist
 
 ---
 
-## Safety notes
-
-Do not publish secrets or runtime data in a public repository.
-
-Do not publish:
-
-- `.env`
-- `*.env`
-- `/opt/nisb-data/`
-- Databases
-- Logs
-- TLS certificates
-- API keys
-- Cloudflare credentials
-- Bearer tokens
-- Private MCP endpoints
-- User-uploaded documents
-- Private RAG libraries
-- Private Room histories
-- Private workspace snapshots
-- Private federation tokens
-
-Before publishing the repository, review deployment files, example configs, logs, screenshots, demo data, and generated artifacts carefully.
-
----
-
 ## Licensing and commercial use
 
 NISB uses a dual licensing model:
