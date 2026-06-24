@@ -1,0 +1,502 @@
+/* /opt/mcp-gateway/nisb-web/src/components/LeftSidebar/LeftSidebar.css */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--selected) 7%, transparent), transparent 38%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sidebar-bg) 96%, transparent),
+      color-mix(in srgb, var(--editor-bg) 72%, transparent)
+    );
+}
+
+:deep(.header) {
+  --nisb-sidebar-bar-height: 44px;
+  --nisb-sidebar-control-height: 32px;
+
+  position: relative;
+  z-index: 20;
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+
+  width: 100%;
+  min-width: 0;
+  height: var(--nisb-sidebar-bar-height);
+  min-height: var(--nisb-sidebar-bar-height);
+  max-height: var(--nisb-sidebar-bar-height);
+  box-sizing: border-box;
+
+  padding: 6px 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sidebar-bg) 96%, transparent),
+      color-mix(in srgb, var(--editor-bg) 70%, transparent)
+    );
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  overflow: hidden;
+}
+
+:deep(.header::after) {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  height: 1px;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--selected) 20%, var(--line)),
+      transparent
+    );
+  opacity: 0.68;
+}
+
+:deep(.tab-group) {
+  flex: 1 1 auto;
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+:deep(.tab-group::-webkit-scrollbar) {
+  display: none;
+}
+
+:deep(.header-actions) {
+  flex: 0 0 auto;
+  min-width: max-content;
+
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+:deep(.tab-btn) {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: max-content;
+  max-width: none;
+  height: var(--nisb-sidebar-control-height);
+  min-height: var(--nisb-sidebar-control-height);
+  max-height: var(--nisb-sidebar-control-height);
+  box-sizing: border-box;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.38rem;
+
+  padding: 0 0.66rem;
+  border: 1px solid color-mix(in srgb, var(--line) 92%, transparent);
+  border-radius: 10px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--editor-bg) 52%, transparent),
+      color-mix(in srgb, var(--sidebar-bg) 88%, transparent)
+    );
+
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 760;
+  line-height: 1;
+  white-space: nowrap;
+
+  box-shadow: 0 1px 0 color-mix(in srgb, white 8%, transparent) inset;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease,
+    transform 0.12s ease;
+}
+
+:deep(.tab-btn:hover),
+:deep(.tab-btn:focus-visible) {
+  border-color: color-mix(in srgb, var(--selected) 34%, var(--line));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--selected-bg) 54%, transparent),
+      color-mix(in srgb, var(--editor-bg) 46%, transparent)
+    );
+  color: var(--selected);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--selected) 10%, transparent),
+    0 8px 18px rgba(0, 0, 0, 0.08);
+  outline: none;
+}
+
+:deep(.tab-btn:active) {
+  transform: translateY(1px);
+}
+
+:deep(.tab-btn.active) {
+  border-color: color-mix(in srgb, var(--selected) 42%, var(--line));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--selected-bg) 72%, transparent),
+      color-mix(in srgb, var(--editor-bg) 42%, transparent)
+    );
+  color: var(--selected);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--selected) 12%, transparent),
+    0 8px 20px rgba(0, 0, 0, 0.09);
+}
+
+:deep(.tab-icon),
+:deep(.tab-label) {
+  flex: 0 0 auto;
+  line-height: 1;
+}
+
+:deep(.tab-icon) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+:deep(.tab-label) {
+  display: inline-flex;
+  align-items: center;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+:deep(.search-btn),
+:deep(.upload-btn),
+:deep(.collapse-btn) {
+  width: var(--nisb-sidebar-control-height);
+  height: var(--nisb-sidebar-control-height);
+  min-width: var(--nisb-sidebar-control-height);
+  max-width: var(--nisb-sidebar-control-height);
+  min-height: var(--nisb-sidebar-control-height);
+  max-height: var(--nisb-sidebar-control-height);
+
+  flex: 0 0 auto;
+  box-sizing: border-box;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--line) 92%, transparent);
+  border-radius: 10px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--editor-bg) 52%, transparent),
+      color-mix(in srgb, var(--sidebar-bg) 88%, transparent)
+    );
+
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+
+  box-shadow: 0 1px 0 color-mix(in srgb, white 8%, transparent) inset;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease,
+    transform 0.12s ease;
+}
+
+:deep(.search-btn:hover),
+:deep(.upload-btn:hover),
+:deep(.collapse-btn:hover),
+:deep(.search-btn:focus-visible),
+:deep(.upload-btn:focus-visible),
+:deep(.collapse-btn:focus-visible) {
+  border-color: color-mix(in srgb, var(--selected) 38%, var(--line));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--selected-bg) 58%, transparent),
+      color-mix(in srgb, var(--editor-bg) 46%, transparent)
+    );
+  color: var(--selected);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--selected) 10%, transparent),
+    0 8px 18px rgba(0, 0, 0, 0.08);
+  outline: none;
+}
+
+:deep(.search-btn:active),
+:deep(.upload-btn:active),
+:deep(.collapse-btn:active) {
+  transform: translateY(1px);
+}
+
+:deep(.collapse-icon) {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.tab-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--selected) 4%, transparent), transparent 34%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sidebar-bg) 94%, transparent),
+      color-mix(in srgb, var(--editor-bg) 76%, transparent)
+    );
+}
+
+.tab-content > * {
+  min-width: 0;
+  min-height: 0;
+}
+
+:deep(.bottom-workspace) {
+  --nisb-sidebar-bar-height: 44px;
+  --nisb-sidebar-control-height: 32px;
+
+  position: relative;
+  z-index: 18;
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  width: 100%;
+  min-width: 0;
+  height: var(--nisb-sidebar-bar-height);
+  min-height: var(--nisb-sidebar-bar-height);
+  max-height: var(--nisb-sidebar-bar-height);
+  box-sizing: border-box;
+
+  padding: 5px 8px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--editor-bg) 70%, transparent),
+      color-mix(in srgb, var(--sidebar-bg) 96%, transparent)
+    );
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+:deep(.bottom-workspace::before) {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 0;
+  height: 1px;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--selected) 18%, var(--line)),
+      transparent
+    );
+  opacity: 0.64;
+}
+
+:deep(.workspace-selector) {
+  flex: 1 1 auto;
+  min-width: 0;
+
+  height: var(--nisb-sidebar-control-height);
+  min-height: var(--nisb-sidebar-control-height);
+  max-height: var(--nisb-sidebar-control-height);
+  box-sizing: border-box;
+
+  padding: 0 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--line) 92%, transparent);
+  border-radius: 10px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--editor-bg) 52%, transparent),
+      color-mix(in srgb, var(--sidebar-bg) 88%, transparent)
+    );
+
+  color: var(--text-main, var(--text));
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 720;
+  line-height: 1;
+  outline: none;
+
+  box-shadow: 0 1px 0 color-mix(in srgb, white 8%, transparent) inset;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+:deep(.workspace-selector:hover),
+:deep(.workspace-selector:focus) {
+  border-color: color-mix(in srgb, var(--selected) 36%, var(--line));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--selected-bg) 54%, transparent),
+      color-mix(in srgb, var(--editor-bg) 46%, transparent)
+    );
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--selected) 10%, transparent),
+    0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+:deep(.settings-btn) {
+  width: var(--nisb-sidebar-control-height);
+  height: var(--nisb-sidebar-control-height);
+  min-width: var(--nisb-sidebar-control-height);
+  max-width: var(--nisb-sidebar-control-height);
+  min-height: var(--nisb-sidebar-control-height);
+  max-height: var(--nisb-sidebar-control-height);
+
+  flex: 0 0 auto;
+  box-sizing: border-box;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--line) 92%, transparent);
+  border-radius: 10px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--editor-bg) 52%, transparent),
+      color-mix(in srgb, var(--sidebar-bg) 88%, transparent)
+    );
+
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1;
+
+  box-shadow: 0 1px 0 color-mix(in srgb, white 8%, transparent) inset;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
+}
+
+:deep(.settings-btn:hover),
+:deep(.settings-btn:focus-visible) {
+  border-color: color-mix(in srgb, var(--selected) 38%, var(--line));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--selected-bg) 58%, transparent),
+      color-mix(in srgb, var(--editor-bg) 46%, transparent)
+    );
+  color: var(--selected);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--selected) 10%, transparent),
+    0 8px 18px rgba(0, 0, 0, 0.08);
+  outline: none;
+}
+
+:deep(.settings-btn:active) {
+  transform: translateY(1px);
+}
+
+:deep(.zen-context-menu) {
+  max-width: min(320px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+@media (max-width: 520px) {
+  :deep(.header) {
+    padding: 6px;
+  }
+
+  :deep(.tab-group),
+  :deep(.header-actions) {
+    gap: 4px;
+  }
+
+  :deep(.tab-btn) {
+    padding: 0 0.52rem;
+  }
+
+  :deep(.bottom-workspace) {
+    padding: 5px 6px;
+    gap: 6px;
+  }
+
+  :deep(.workspace-selector) {
+    padding: 0 0.58rem;
+  }
+}
+
+@media (max-width: 420px) {
+  :deep(.tab-btn) {
+    gap: 0.3rem;
+    padding: 0 0.48rem;
+  }
+
+  :deep(.tab-label) {
+    max-width: 5.8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

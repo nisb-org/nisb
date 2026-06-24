@@ -1,0 +1,22 @@
+# NISB local secrets and runtime data
+.env
+*.env
+!*.env.example
+mcp-nisb/.env
+
+# Real deployment Caddyfile is private; example stays public
+caddy/Caddyfile
+!caddy/Caddyfile.example
+
+# Runtime data and logs
+/opt/nisb-data/
+nisb-data/
+caddy/logs/
+*.log
+
+# Build and cache artifacts
+node_modules/
+nisb-web/dist/
+__pycache__/
+*.pyc
+.DS_Store

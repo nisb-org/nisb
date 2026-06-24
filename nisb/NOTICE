@@ -1,0 +1,31 @@
+NISB
+Copyright (C) 2026 NISB Project Contributors
+
+NISB is licensed under the GNU Affero General Public License v3.0
+as the open-source license, with commercial licensing available
+under a separate written agreement.
+
+Open-source license: AGPL-3.0-only
+Commercial licensing contact: license@nisb.me
+Remote Install contact: install@nisb.me
+Security contact: security@nisb.me
+General contact: contact@nisb.me
+
+See:
+- LICENSE
+- DUAL-LICENSE.md
+- COMMERCIAL-LICENSE.md
+
+Third-party software, packages, APIs, services, fonts, system packages,
+and other dependencies remain governed by their own licenses and terms.
+
+See:
+- THIRD_PARTY_NOTICES.md
+- COMMERCIAL-THIRD-PARTY-DEPENDENCIES.md
+
+The NISB name, logo, branding, domain name, and project identity are not
+granted for commercial product branding, hosted service branding,
+marketplace listings, modified distributions, or public endorsement
+without separate written permission.
+
+NISB is provided without warranty, to the extent permitted by applicable law.

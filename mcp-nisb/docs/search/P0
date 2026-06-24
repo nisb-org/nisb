@@ -1,0 +1,241 @@
+# P0 Short CJK Recall Closeout
+
+Release status: P3 closeout / release candidate  
+Last validation baseline: 2026-06-20  
+Scope: short CJK recall, CJK phrase recall, Japanese text recall, and related parent-result behavior
+
+## 1. Closeout Summary
+
+The short CJK recall track is complete.
+
+The original goal was to make short Chinese queries practical in the unified search experience. By P3, the result is stronger than the original target: arbitrary Chinese phrases, short Chinese snippets, and even small fragments from deep inside large Markdown documents can be found through indexed recall with interactive latency.
+
+Manual validation also shows that Japanese text recall benefits from the same CJK-oriented path. English recall is currently weaker than Chinese/Japanese recall in some body-text scenarios, most likely because English token boundaries and phrase behavior differ from compact CJK text. This is accepted as a future optimization area and is not a blocker for the current NISB release.
+
+## 2. Original Problem
+
+Before the CJK recall work, short Chinese queries were fragile.
+
+Typical weak cases included:
+
+- Two-character or three-character Chinese terms.
+- Chinese phrases copied from file body text.
+- Rare terms appearing only once inside a long Markdown document.
+- Chinese headings that were not represented well in parent titles.
+- Mixed Chinese-English implementation notes.
+- CJK text embedded inside long documentation files.
+
+The main risk was that a user could remember a few Chinese characters from a note but fail to retrieve the file, even though the text existed in the local corpus.
+
+## 3. Design Constraints
+
+The implementation had to preserve the local-first search design.
+
+The following constraints remain active:
+
+- Do not turn normal search into an unbounded raw body scan.
+- Do not put full file bodies into `search_entries.snippet`.
+- Do not expand the UI result table with raw recall chunks.
+- Do not use an external search service.
+- Do not add a heavy resident search daemon.
+- Keep `search_entries` focused on lightweight parent/display records.
+- Use recall-only tables for deeper body-text coverage.
+- Join recall hits back to parent items before returning results.
+- Keep grouped frontend output compatible with the existing API contract.
+
+These constraints are important because NISB is expected to run on small VPS deployments.
+
+## 4. Final Behavior
+
+P3 short CJK recall supports the following practical behavior:
+
+- A short Chinese term can retrieve a file even when the term appears only in body text.
+- A short Chinese phrase can retrieve deep Markdown content.
+- Chinese headings can act as effective recall anchors.
+- Mixed Chinese-English notes remain searchable.
+- Japanese text recall is also strong in practical testing.
+- Returned results remain parent file/chat/dir/library records, not raw recall chunks.
+- Duplicate file paths remain folded.
+- `.trash` and `.history` noise does not dominate top results.
+
+The strongest practical outcome is that Chinese recall now reaches the bottom of large Markdown documents. A user can search a few remembered characters or a small sentence fragment and still retrieve the relevant file.
+
+## 5. Query Classification
+
+Short CJK behavior depends on query classification.
+
+Important classes include:
+
+| Query class | Purpose |
+|---|---|
+| `short_cjk` | Compact Chinese/Japanese/Korean queries and short CJK phrases |
+| `keyword` | General keyword search with normal indexed recall |
+| `phrase` | Phrase-like query behavior |
+| `filename` | Filename/path/code-heavy query behavior |
+| `long_nl` | Long natural-language query behavior |
+| `long_phrase` | Long phrase query behavior |
+
+The `short_cjk` class is intentionally conservative and fast. It avoids expensive content scans and depends on indexed title/recall lanes.
+
+## 6. Retrieval Strategy
+
+The short CJK path uses controlled indexed recall.
+
+Typical behavior:
+
+1. Normalize the query into raw, normalized, compact, and token forms.
+2. Classify the query as `short_cjk` when appropriate.
+3. Run direct title/path lanes where useful.
+4. Use recall FTS for enabled modules.
+5. Join recall hits back to parent records.
+6. Merge evidence by parent.
+7. Fold duplicate file paths.
+8. Return grouped parent results.
+
+The recall path is especially important for text that is not present in titles or filenames.
+
+## 7. CJK Phrase Expansion
+
+P3 also includes CJK phrase expression expansion.
+
+This improves queries that are longer than a tiny two-character term but still behave like compact CJK phrases. Examples include:
+
+- `从自然语言到本体论的转化`
+- `自然语言 本体论`
+- `前端接线`
+- `四源搜索`
+- `尼帕病毒`
+
+The goal is not to blindly broaden every query. The goal is to make compact Chinese expressions behave like searchable phrases while preserving latency.
+
+## 8. Heading Recall
+
+Heading recall contributes to CJK recall quality.
+
+Heading recall chunks are stored as recall-only rows and are not displayed directly. They help when the remembered text appears as a Markdown heading or section title inside a file body rather than in the file name.
+
+Typical heading patterns include:
+
+- Markdown headings such as `#`, `##`, and `###`.
+- Chinese chapter headings.
+- Numbered headings.
+- Bracketed Chinese headings.
+
+These heading chunks improve semantic discoverability without expanding `search_entries`.
+
+## 9. Parent Evidence
+
+P3 parent evidence widening makes recall results easier to understand.
+
+When a parent result is found through recall text, the final item can now preserve useful evidence fields such as:
+
+- `matched_source_kind`
+- `recall_tier`
+- `recall_chunk_index`
+- `recall_evidence`
+- `match_type`
+- `match_reason`
+- `matched_terms`
+- `fts_rank`
+- `snippet_head`
+
+This does not turn raw chunks into UI rows. It only improves explanation and debugging for the parent result.
+
+## 10. Validation Examples
+
+Recent validation showed the intended behavior.
+
+| Query | Expected behavior |
+|---|---|
+| `前端接线` | Fast short CJK title/file recall |
+| `尼帕病毒` | Short CJK recall across chat and files |
+| `四源搜索` | Short CJK recall across directory/file records |
+| `自然语言 本体论` | CJK phrase recall with heading/body evidence |
+| `从自然语言到本体论的转化` | Deep body-text phrase recall |
+| `拓补` | Short CJK fuzzy/recall behavior |
+| `有趣短文` | Short CJK recall for rare phrase text |
+
+The important result is not just that these queries return something. The important result is that they return parent records with clean grouping and useful evidence.
+
+## 11. Known Non-Blocking Limit
+
+English body-text recall is currently weaker than Chinese/Japanese recall in some cases.
+
+This is accepted for the current release because the primary P0/P1.5 objective was CJK recall hardening. English recall should be handled as a future improvement track, likely focused on English phrase behavior, token selection, stemming-like fallback, and long natural-language expression widening.
+
+This known limit does not block the P3 release candidate.
+
+## 12. Performance Outcome
+
+The short CJK path remains fast enough for interactive use.
+
+Recent evaluation showed:
+
+- 21 total P3 evaluation queries.
+- 0 per-query hard failures.
+- 1 warning query: `搜索闸门`.
+- 12 ordinary-class queries.
+- 11 of 12 ordinary queries under 300ms.
+- Maximum observed latency under the current eval run: 934ms.
+
+The warning query is accepted because offline inspection showed no matching recall text for that phrase. It should remain a warning sample rather than a release blocker.
+
+## 13. DB Policy
+
+The P3 index is larger than the earlier P1 target but remains acceptable for the current release.
+
+Current policy:
+
+| Threshold | Meaning |
+|---|---|
+| 1.4GB | Soft warning |
+| 1.6GB | Hard failure |
+
+This policy reflects the current product decision: do not reduce search quality only to save a small amount of storage.
+
+## 14. Operational Rules
+
+The following rules should remain in force:
+
+- Keep short CJK search indexed and bounded.
+- Keep recall-only rows out of direct UI display.
+- Always join recall hits back to parent records.
+- Do not use unbounded body `LIKE` in runtime search.
+- Do not place full file bodies in `search_entries.snippet`.
+- Do not enable heavy library recall for this lane.
+- Keep duplicate file paths folded.
+- Keep `.trash` and `.history` out of top results.
+
+## 15. Release Decision
+
+P0 short CJK recall is closed.
+
+The release decision is:
+
+```text
+Status: complete
+Search quality: pass
+CJK recall: pass
+Japanese recall: pass by manual validation
+English recall: future improvement
+Latency: pass
+Duplicate file paths: pass
+Noise control: pass
+DB size: soft warning only
+Release blocker: none
+```
+
+## 16. Future Work
+
+Future work should not reopen P0 unless a regression appears.
+
+Recommended future tracks:
+
+- English phrase recall improvement.
+- Better English long natural-language token selection.
+- Optional English-specific fallback expressions.
+- Continued evaluation harness coverage.
+- More multilingual smoke queries.
+- Release documentation for user-facing search behavior.
+
+The current CJK recall system is good enough to freeze for the NISB release candidate.

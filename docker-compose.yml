@@ -1,0 +1,116 @@
+services:
+  mcp-nisb:
+    build:
+      context: ./mcp-nisb
+      dockerfile: Dockerfile
+    container_name: mcp-nisb
+    restart: unless-stopped
+    init: true
+
+    # Keep backend MCP and API ports private to the Docker network.
+    expose:
+      - "8005"
+      - "8006"
+
+    networks:
+      - mcp-network
+
+    volumes:
+      - /opt/nisb-data:/data:rw
+      - ./mcp-nisb:/srv
+      # Docker socket access is powerful. Remove it later if the backend no longer needs it.
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+
+    env_file:
+      - ./mcp-nisb/.env
+
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=utf-8
+      - NISB_BASE_PATH=/data
+
+      # Declare RSS scheduler switches explicitly to keep deployment diagnostics clear.
+      - NISB_RSS_AUTO_IMPORT_ENABLED=1
+      - NISB_RSS_AUTO_FETCH_ENABLED=1
+
+      # Run RSS scheduler ticks through subprocesses to isolate long-running work.
+      - NISB_RSS_SCHEDULER_SUBPROCESS=1
+
+      # Bound one auto-import tick so it stays safe on small VPS instances.
+      - NISB_RSS_AUTO_IMPORT_TIMEOUT_SECONDS=300
+      - NISB_RSS_AUTO_IMPORT_MAX_USERS_PER_TICK=1
+      - NISB_RSS_AUTO_IMPORT_MAX_RULES_PER_USER=1
+      - NISB_RSS_AUTO_IMPORT_MAX_SECONDS_PER_TICK=35
+      - NISB_RSS_AUTO_IMPORT_MAX_USERS_SCAN_FOR_TICK=2000
+      - NISB_RSS_AUTO_IMPORT_MAX_USERS_SCAN=2000
+
+      # Bound gate candidate work during automatic RSS imports.
+      - NISB_RSS_AUTO_IMPORT_GATE_SCAN_CAP=4000
+      - NISB_RSS_AUTO_IMPORT_GATE_CANDIDATE_CAP=800
+
+      # Bound one auto-fetch tick so it does not monopolize shared scheduler capacity.
+      - NISB_RSS_AUTO_FETCH_TIMEOUT_SECONDS=180
+      - NISB_RSS_AUTO_FETCH_MAX_USERS_PER_TICK=1
+
+    command: >
+      sh -c "python3 /srv/nisb_mcp.py &
+             uvicorn api_gateway:app --host 0.0.0.0 --port 8006 --app-dir /srv"
+
+    cpus: 2.0
+    mem_limit: 1024m
+    mem_reservation: 800m
+
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import socket; s=socket.socket(); s.connect(('localhost',8005)); s.close()"]
+      interval: 300s
+      timeout: 60s
+      retries: 2
+      start_period: 60s
+
+  nisb-web:
+    build:
+      context: ./nisb-web
+    container_name: nisb-web
+    restart: unless-stopped
+    expose:
+      - "5173"
+    networks:
+      - mcp-network
+    environment:
+      - NODE_ENV=production
+      - VITE_API_BASE_URL=/api
+    mem_limit: 1536m
+    cpus: 1.0
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: mcp-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/apis:/etc/caddy/apis:ro
+      - ./caddy/logs:/var/log/caddy:rw
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - mcp-nisb
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  mcp-network:
+    driver: bridge
+
+volumes:
+  caddy_data: {}
+  caddy_config: {}
+
