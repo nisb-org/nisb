@@ -44,7 +44,8 @@ from .index_sync_chat import decide_chat_refresh, sync_chat
 from .index_sync_fs import quick_sync_file_module
 
 
-_RECALL_RESCUE_RAW_MODULES = {"doc", "files", "library"}
+# Fix: added "chat" so recall_rescue also re-queries chat when it returns 0 results
+_RECALL_RESCUE_RAW_MODULES = {"doc", "files", "library", "chat"}
 
 
 def _extract_sync_module_elapsed_ms(modules_payload: Any) -> Dict[str, int]:
@@ -130,6 +131,9 @@ def _chat_title_satisfied_for_short_cjk(
         return False
 
     chat_total = _safe_int(totals.get("chat"))
+    # Fix: chat_total must be > 0 to be considered satisfied; 0 results is never "satisfied"
+    if chat_total <= 0:
+        return False
     if chat_total >= max(3, min(int(per_module_limit or 20), 8)):
         return True
 
@@ -256,6 +260,7 @@ def _rescue_candidate_raw_modules(
 ) -> List[str]:
     files_total = _safe_int(totals.get("files"))
     library_total = _safe_int(totals.get("library"))
+    chat_total = _safe_int(totals.get("chat"))
 
     out: List[str] = []
 
@@ -268,6 +273,9 @@ def _rescue_candidate_raw_modules(
         if logical_group == "files" and files_total <= 0:
             out.append(module)
         elif logical_group == "library" and library_total <= 0:
+            out.append(module)
+        # Fix: chat with 0 results is also a rescue candidate
+        elif logical_group == "chat" and chat_total <= 0:
             out.append(module)
 
     if out:
@@ -634,13 +642,9 @@ def nisb_search_cross_module(
             and indexed_total_before_query > 0
         )
         defer_chat_refresh_reason = ""
-        if (
-            can_defer_chat_refresh
-            and query_class == "short_cjk"
-            and len(str(query_compact or guarded_raw_query or "")) >= 2
-        ):
-            defer_chat_refresh_reason = "short_cjk_query_first"
-        elif can_defer_chat_refresh and query_class == "long_nl":
+        # Fix: removed short_cjk defer — short CJK queries now always sync chat before querying.
+        # Only long_nl is deferred (title-only fast path is sufficient for long NL queries).
+        if can_defer_chat_refresh and query_class == "long_nl":
             defer_chat_refresh_reason = "long_nl_direct_title_only_query_first"
 
         if defer_chat_refresh_reason:
@@ -1257,4 +1261,3 @@ def nisb_search_cross_module(
                 conn.close()
             except Exception:
                 pass
-
