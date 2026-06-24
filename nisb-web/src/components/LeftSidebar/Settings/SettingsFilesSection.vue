@@ -211,7 +211,10 @@
       </div>
 
       <div class="favorites-preview muted settings-hint">
-        <template v-if="savedFavoritesPreview.length">
+        <template v-if="localFavoritesCleared">
+          {{ t('settings.files.snapshotFavorites.clearedUnsaved', { fallback: '常用（已清空，未保存）—— 点「保存到工作空间」持久化，或点「应用到 UI」恢复。' }) }}
+        </template>
+        <template v-else-if="savedFavoritesPreview.length">
           {{ t('settings.files.snapshotFavorites.preview', { items: favorites_preview_text }) }}
         </template>
         <template v-else>
@@ -250,17 +253,13 @@
         </button>
 
         <button
-          class="mini-btn danger"
+          class="mini-btn warning"
           type="button"
-          @click="$emit('clear-workspace-files-state')"
+          @click="$emit('clear-workspace-favorites-local')"
           :disabled="busy || !workspaceIdSafe"
         >
-          {{ t('settings.files.actions.clearWorkspaceState') }}
+          {{ t('settings.files.actions.clearFavorites', { fallback: '清空常用' }) }}
         </button>
-      </div>
-
-      <div class="muted settings-hint danger-hint">
-        {{ t('settings.files.actions.clearHint') }}
       </div>
     </div>
   </div>
@@ -288,7 +287,8 @@ const props = defineProps({
   isDefaultWorkspace: { type: Boolean, default: false },
   savedFocusedPreview: { type: String, default: '' },
   savedFavoritesCount: { type: Number, default: 0 },
-  savedFavoritesPreview: { type: Array, default: () => [] }
+  savedFavoritesPreview: { type: Array, default: () => [] },
+  localFavoritesCleared: { type: Boolean, default: false }
 })
 
 const emit = defineEmits([
@@ -308,7 +308,7 @@ const emit = defineEmits([
   'read-focus-from-local',
   'apply-workspace-files-state-to-ui',
   'save-workspace-snapshot-from-current',
-  'clear-workspace-files-state'
+  'clear-workspace-favorites-local'
 ])
 
 const { t } = useI18n()
@@ -483,8 +483,14 @@ const favorites_preview_text = computed(() => {
   border-color: color-mix(in srgb, var(--selected) 18%, var(--line));
 }
 
-.danger-hint {
-  color: color-mix(in srgb, #d97706 78%, var(--text-secondary));
+.mini-btn.warning {
+  background: color-mix(in srgb, #d97706 12%, transparent);
+  color: #d97706;
+  border-color: rgba(217, 119, 6, 0.34);
+}
+
+.mini-btn.warning:hover:not(:disabled) {
+  background: color-mix(in srgb, #d97706 22%, transparent);
 }
 
 @media (max-width: 720px) {
@@ -527,4 +533,3 @@ const favorites_preview_text = computed(() => {
   }
 }
 </style>
-
