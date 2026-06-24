@@ -106,14 +106,14 @@ export default {
         refreshPreview: '刷新预览',
         copyCurrentLinks: '复制当前收藏链接',
         preview: '预览（最多 8 个）：{items}',
-        empty: '当前快照还没有收藏项。请先在文件树里添加收藏，再点击保存到工作空间。'
+        empty: '当前快照还没有收藏项。请先在文件树里添加收藏，再点击保存到工作空间。',
+        clearedUnsaved: '常用已清空（未保存）——点击「保存到工作空间」持久化，或点击「应用到 UI」恢复。'
       },
       actions: {
         readCurrentFocus: '读取当前聚焦目录',
         applyToUi: '应用到 UI',
         saveToWorkspace: '保存到工作空间',
-        clearWorkspaceState: '清空工作空间文件状态',
-        clearHint: '清空会同时抹掉已保存快照和当前状态：focus 变为空、收藏被清除，旧的全局收藏也不会再自动回填。'
+        clearFavorites: '清空常用'
       }
     },
     performance: {
@@ -379,10 +379,10 @@ export default {
       appliedToUi: '已恢复并应用到界面',
       applyFailed: '应用失败：{error}',
 
-      clearWorkspaceFilesStateConfirm: '确认清空该工作空间的“快照 + 当前态”？\n\n此操作会把聚焦设为空，并清空常用列表。',
       clearWorkspaceFilesStateFailed: '清空工作空间文件状态失败',
       workspaceFilesStateCleared: '已清空工作空间文件状态',
-      clearFailed: '清空失败：{error}'
+      clearFailed: '清空失败：{error}',
+      favoritesLocalCleared: '常用已清空（未保存）。点击「保存到工作空间」持久化，或点击「应用到 UI」恢复。'
     },
     conversations: {
       title: '历史对话',
@@ -564,4 +564,3 @@ export default {
   ...timelineRuntime,
   rss
 }
-
