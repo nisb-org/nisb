@@ -1,1 +1,131 @@
+{
+  servers {
+    protocols h1 h2
+  }
+}
 
+# Replace these example domains with your own domain names before using this file.
+www.nisb.example.com {
+  redir https://nisb.example.com{uri} permanent
+}
+
+nisb.example.com {
+  @options method OPTIONS
+  handle @options {
+    header Access-Control-Allow-Origin "*"
+    header Access-Control-Allow-Methods "POST, GET, OPTIONS"
+    header Access-Control-Allow-Headers "Content-Type, Authorization, Accept, Cache-Control, Mcp-Session-Id, X-Request-Id, X-Shared-Secret"
+    header Access-Control-Expose-Headers "Mcp-Session-Id, Content-Type, X-Request-Id, Cache-Control"
+    respond "" 204
+  }
+
+  handle /kb/mcp* {
+    respond "KB MCP service has been retired." 410
+  }
+
+  handle /nisb/mcp* {
+    uri strip_prefix /nisb
+    reverse_proxy mcp-nisb:8005
+    header Access-Control-Allow-Origin "*"
+    header Cache-Control "no-cache, no-store, no-transform, must-revalidate"
+    header X-Accel-Buffering "no"
+  }
+
+  @api_stream {
+    path /api/mcp/stream
+  }
+  handle @api_stream {
+    header Access-Control-Allow-Origin "*"
+    header Access-Control-Allow-Methods "POST, GET, OPTIONS"
+    header Access-Control-Allow-Headers "Content-Type, Authorization"
+    header Cache-Control "no-cache, no-store, no-transform, must-revalidate"
+    header X-Accel-Buffering "no"
+
+    reverse_proxy mcp-nisb:8006 {
+      flush_interval -1
+      transport http {
+        versions 1.1
+        compression off
+      }
+      header_up -Accept-Encoding
+    }
+  }
+
+  @editor_api_stream {
+    path /editor/api/mcp/stream
+  }
+  handle @editor_api_stream {
+    uri strip_prefix /editor
+
+    header Access-Control-Allow-Origin "*"
+    header Access-Control-Allow-Methods "POST, GET, OPTIONS"
+    header Access-Control-Allow-Headers "Content-Type, Authorization"
+    header Cache-Control "no-cache, no-store, no-transform, must-revalidate"
+    header X-Accel-Buffering "no"
+
+    reverse_proxy mcp-nisb:8006 {
+      flush_interval -1
+      transport http {
+        versions 1.1
+        compression off
+      }
+      header_up -Accept-Encoding
+    }
+  }
+
+  handle_path /api/* {
+    reverse_proxy mcp-nisb:8006 {
+      transport http {
+        dial_timeout 10s
+        response_header_timeout 120s
+        read_timeout 300s
+        write_timeout 300s
+      }
+    }
+    header Access-Control-Allow-Origin "*"
+    header Access-Control-Allow-Methods "POST, GET, OPTIONS"
+    header Access-Control-Allow-Headers "Content-Type, Authorization"
+    header Cache-Control "no-cache, no-store, no-transform, must-revalidate"
+    header X-Accel-Buffering "no"
+  }
+
+  handle_path /editor/api/* {
+    reverse_proxy mcp-nisb:8006 {
+      transport http {
+        dial_timeout 10s
+        response_header_timeout 120s
+        read_timeout 300s
+        write_timeout 300s
+      }
+    }
+    header Access-Control-Allow-Origin "*"
+    header Access-Control-Allow-Methods "POST, GET, OPTIONS"
+    header Access-Control-Allow-Headers "Content-Type, Authorization"
+    header Cache-Control "no-cache, no-store, no-transform, must-revalidate"
+    header X-Accel-Buffering "no"
+  }
+
+  @api_options {
+    method OPTIONS
+    path /api/* /editor/api/*
+  }
+  handle @api_options {
+    header Access-Control-Allow-Origin "*"
+    header Access-Control-Allow-Methods "POST, GET, OPTIONS"
+    header Access-Control-Allow-Headers "Content-Type, Authorization"
+    respond "" 204
+  }
+
+  handle /assets* {
+    header Cache-Control "public, max-age=31536000, immutable"
+    reverse_proxy nisb-web:5173
+  }
+
+  handle /health {
+    respond "Web OK" 200
+  }
+
+  handle {
+    reverse_proxy nisb-web:5173
+  }
+}
