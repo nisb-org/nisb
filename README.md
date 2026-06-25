@@ -188,6 +188,18 @@ This model is optimized for:
 
 ---
 
+## Redeployable by design
+
+NISB keeps the main workspace state under a persistent data directory separate from the application.
+
+A fresh deployment can be completed using a standard set of commands. The main user state, including notes, files, libraries, evidence stores, Room notebooks, and workspace configuration, lives under `/opt/nisb-data`.
+
+Moving or restoring a NISB instance primarily means redeploying the application and moving the data directory. No manual reconstruction of configuration scattered across multiple services or external dependencies is required to restore a working workspace.
+
+This matters for self-hosted AI workspaces. Workspace state should not be trapped inside a fragile, one-off setup that is difficult to reproduce, back up, or move.
+
+---
+
 ## Quick start
 
 > For assisted setup, Remote Install is available: [https://ko-fi.com/nisbdev/commissions](https://ko-fi.com/nisbdev/commissions)
