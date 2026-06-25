@@ -1402,6 +1402,22 @@ export default {
       }
     },
 
+    validation: {
+      nameRequired: 'Role name is required',
+      timeConflict: 'Use either time_filter_days or time_start/time_end, not both',
+      timeRangeBothRequired: 'Both time_start and time_end are required for range mode',
+      timeStartAfterEnd: 'time_start must not be later than time_end',
+      mcpProviderRequired: 'A provider must be selected when MCP is enabled',
+      providerNotInRegistry: 'Provider is not in the local registry and has no imported snapshot; cannot save',
+      providerUnavailable: 'The selected provider is currently unavailable',
+      importedProviderMissingSnapshot: 'Imported provider is missing a stable snapshot; cannot save',
+      importedRoomProviderMissingSourceId: 'Imported room provider is missing source_room_id; cannot save',
+      roomProviderMissingSourceId: 'Room provider is missing source_room_id; cannot save',
+      roomProviderPrivateScopeExposed: 'Invalid room provider boundary: owner private scope must not be exposed',
+      roomProviderInheritWorkspace: 'Room provider does not allow inherit_workspace_context on the consumer side',
+      roomProviderInheritFocusRoot: 'Room provider does not allow inherit_focus_root on the consumer side',
+    },
+
     messages: {
       providerSelected: 'Provider selected: {provider}',
       loadProviderRegistryFailed: 'Failed to load provider catalog',
@@ -1455,11 +1471,13 @@ export default {
       },
       libraryId: {
         label: 'library_id',
-        placeholder: 'Optional'
+        placeholder: 'Optional',
+        loading: 'Loading…'
       },
       groupId: {
         label: 'group_id',
-        placeholder: 'Optional'
+        placeholder: 'Optional',
+        loading: 'Loading…'
       },
       docId: {
         label: 'doc_id',
