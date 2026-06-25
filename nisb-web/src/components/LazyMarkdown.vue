@@ -337,7 +337,7 @@ function renderChunkToSafeHtml(mdText, chunkIndex) {
     return DOMPurify.sanitize(html, {
       USE_PROFILES: { html: true },
       ALLOW_UNKNOWN_PROTOCOLS: true,
-      ADD_ATTR: ['id', 'data-heading-anchor', 'data-heading-key']
+      ADD_ATTR: ['id', 'data-heading-anchor', 'data-heading-key', 'controls', 'autoplay', 'download', 'data-nisb-audio-b64', 'data-nisb-audio-url', 'data-nisb-audio-mime', 'data-nisb-audio-name']
     })
   } catch {
     return `<p>${_escape_html_text(t('note.reader.lazyMarkdown.renderFailed'))}</p>`
@@ -934,9 +934,77 @@ watch(
   { immediate: true }
 )
 
+async function handle_nisb_audio_download_click(e) {
+  const target = e?.target
+  const btn = target && typeof target.closest === 'function'
+    ? target.closest('[data-nisb-audio-b64], [data-nisb-audio-url]')
+    : null
+  if (!btn) return
+
+  e.preventDefault()
+  e.stopPropagation()
+
+  const b64 = btn.getAttribute('data-nisb-audio-b64') || ''
+  const remoteUrl = btn.getAttribute('data-nisb-audio-url') || ''
+  const mime = btn.getAttribute('data-nisb-audio-mime') || 'audio/mpeg'
+  const name = btn.getAttribute('data-nisb-audio-name') || 'audio.mp3'
+
+  try {
+    let blob = null
+
+    if (b64) {
+      const raw = atob(b64)
+      const buf = new Uint8Array(raw.length)
+      for (let i = 0; i < raw.length; i++) buf[i] = raw.charCodeAt(i)
+      blob = new Blob([buf], { type: mime })
+    } else if (remoteUrl) {
+      btn.setAttribute('disabled', 'disabled')
+      btn.classList.add('nisb-audio-download-busy')
+
+      const res = await fetch(remoteUrl, {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit',
+      })
+      if (!res.ok) throw new Error(`download_failed:${res.status}`)
+      blob = await res.blob()
+    }
+
+    if (!blob) return
+
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    document.body.appendChild(a)
+    a.click()
+
+    window.setTimeout(() => {
+      URL.revokeObjectURL(url)
+      a.remove()
+    }, 1000)
+  } catch (err) {
+    console.warn('nisb audio download error', err)
+    if (remoteUrl) {
+      window.open(remoteUrl, '_blank', 'noopener,noreferrer')
+    }
+  } finally {
+    try {
+      btn.removeAttribute('disabled')
+      btn.classList.remove('nisb-audio-download-busy')
+    } catch {}
+  }
+}
+
 onMounted(() => {
   _set_current_path(_read_path_from_storage())
   window.addEventListener('nisb-outline-context', _on_outline_context, true)
+
+  const wEl = wrapRef.value
+  if (wEl) {
+    wEl.addEventListener('click', handle_nisb_audio_download_click, true)
+  }
+
   setupScrollListener()
   setupObserver(__refreshSeq)
 })
@@ -944,6 +1012,12 @@ onMounted(() => {
 onUnmounted(() => {
   __alive = false
   window.removeEventListener('nisb-outline-context', _on_outline_context, true)
+
+  const wEl = wrapRef.value
+  if (wEl) {
+    wEl.removeEventListener('click', handle_nisb_audio_download_click, true)
+  }
+
   cleanupObserver()
   cleanupScrollListener()
   if (__enhance_idle_id !== null) {
@@ -1074,6 +1148,90 @@ defineExpose({ jumpTo })
 
 .lm-done {
   opacity: 0.78;
+}
+
+.lm-chunk :deep(.nisb-audio-download-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  margin: 0.45rem 0 0.35rem;
+  padding: 0.34rem 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--selected) 34%, var(--line));
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--selected) 8%, var(--editor-bg)),
+      color-mix(in srgb, var(--sidebar-bg) 88%, transparent)
+    );
+  color: color-mix(in srgb, var(--selected) 82%, var(--text-main));
+  font: inherit;
+  font-size: 0.84em;
+  font-weight: 720;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 42%, transparent) inset,
+    0 8px 20px color-mix(in srgb, var(--selected) 8%, transparent);
+  transition:
+    transform 0.14s ease,
+    border-color 0.14s ease,
+    background 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+.lm-chunk :deep(.nisb-audio-download-btn:hover) {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--selected) 58%, var(--line));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--selected) 13%, var(--editor-bg)),
+      color-mix(in srgb, var(--sidebar-bg) 94%, transparent)
+    );
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 48%, transparent) inset,
+    0 10px 24px color-mix(in srgb, var(--selected) 12%, transparent);
+}
+
+.lm-chunk :deep(.nisb-audio-download-btn:active) {
+  transform: translateY(0);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 28%, transparent) inset,
+    0 4px 12px color-mix(in srgb, var(--selected) 7%, transparent);
+}
+
+.lm-chunk :deep(.nisb-audio-download-icon) {
+  display: inline-grid;
+  place-items: center;
+  width: 1.18rem;
+  height: 1.18rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--selected) 13%, transparent);
+  color: var(--selected);
+  font-size: 0.78em;
+  line-height: 1;
+}
+
+.lm-chunk :deep(.nisb-audio-download-size) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.12rem;
+  padding: 0 0.38rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--selected) 9%, transparent);
+  color: var(--text-secondary);
+  font-size: 0.82em;
+  font-weight: 680;
+}
+
+.lm-chunk :deep(.nisb-audio-download-btn.nisb-audio-download-busy),
+.lm-chunk :deep(.nisb-audio-download-btn:disabled) {
+  cursor: wait;
+  opacity: 0.72;
+  transform: none;
 }
 
 @media (max-width: 720px) {

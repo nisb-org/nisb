@@ -1703,3 +1703,4 @@ def _log_operation(
             f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
     except Exception as e:
         print(f"[WARN] Failed to write operation log: {str(e)}")
+

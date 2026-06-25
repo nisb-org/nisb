@@ -888,6 +888,8 @@ async function save_workspace_snapshot_from_current() {
 
     toast(get_display_text(data, 'workspace.snapshotSaved'), 'success')
     await refresh_workspace_files_state()
+    // 保存成功后立即刷新左侧栏常用区
+    window.dispatchEvent(new CustomEvent('nisb-favorites-refresh'))
   } catch (e) {
     toast(tr('workspace.saveFailed', { error: visible_error(e, 'workspace.saveSnapshotFailed') }), 'error')
   } finally {
@@ -1083,3 +1085,5 @@ function reset() {
   backdrop-filter: blur(8px);
 }
 </style>
+
+

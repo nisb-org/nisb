@@ -1,0 +1,110 @@
+{
+  "version": "1.0",
+  "description": "泛化词黑名单：这些词过于宽泛，不适合创建概念关系",
+  "last_updated": "2025-10-22",
+  
+  "categories": {
+    "time_related": {
+      "description": "时间相关的泛化词",
+      "words": [
+        "今天", "昨天", "明天", "现在", "过去", "将来",
+        "时间", "时刻", "瞬间", "moment", "time", "today",
+        "yesterday", "tomorrow", "now", "past", "future"
+      ]
+    },
+    
+    "document_related": {
+      "description": "文档/笔记相关的泛化词",
+      "words": [
+        "笔记", "文档", "文件", "记录", "内容", "信息",
+        "note", "document", "file", "content", "info",
+        "data", "text", "article", "page"
+      ]
+    },
+    
+    "system_related": {
+      "description": "系统/工具相关的泛化词",
+      "words": [
+        "系统", "工具", "功能", "方法", "模块", "组件",
+        "system", "tool", "function", "method", "module",
+        "component", "feature", "app", "software"
+      ]
+    },
+    
+    "generic_actions": {
+      "description": "泛化的动作/操作词",
+      "words": [
+        "使用", "操作", "处理", "分析", "整理", "总结",
+        "记录", "保存", "查询", "搜索", "思考", "学习",
+        "理解", "认知", "use", "operate", "process",
+        "analyze", "organize", "summarize", "save",
+        "query", "search", "think", "learn", "understand"
+      ]
+    },
+    
+    "generic_concepts": {
+      "description": "过于抽象的泛化概念",
+      "words": [
+        "概念", "知识", "问题", "方案", "想法", "建议",
+        "原则", "规则", "标准", "指标", "目标", "结果",
+        "concept", "knowledge", "problem", "solution",
+        "idea", "suggestion", "principle", "rule",
+        "standard", "metric", "goal", "result"
+      ]
+    },
+    
+    "tech_generic": {
+      "description": "技术领域的泛化词",
+      "words": [
+        "nisb", "mcp", "ai", "llm", "gpt", "agent",
+        "api", "json", "csv", "pdf", "http", "url",
+        "phase", "version", "v1", "v2", "v3",
+        "test", "demo", "example", "sample",
+        "NISB", "Nisb", "Phase"
+      ]
+    },
+    
+    "user_related": {
+      "description": "用户/角色相关的泛化词",
+      "words": [
+        "用户", "人", "个人", "自己", "我", "你",
+        "user", "person", "people", "self", "me", "you",
+        "bob", "admin", "guest"
+      ]
+    },
+    
+    "quality_words": {
+      "description": "质量/评价类的泛化词",
+      "words": [
+        "好", "坏", "重要", "次要", "关键", "核心",
+        "主要", "基础", "高级", "简单", "复杂", "完整",
+        "good", "bad", "important", "key", "core",
+        "main", "basic", "advanced", "simple", "complex", "complete"
+      ]
+    },
+    
+    "relation_words": {
+      "description": "关系相关的元词汇（避免自指）",
+      "words": [
+        "关系", "连接", "联系", "关联", "映射", "绑定",
+        "relation", "connection", "link", "association",
+        "mapping", "binding"
+      ]
+    },
+    
+    "misc_generic": {
+      "description": "其他杂项泛化词",
+      "words": [
+        "而是", "看到", "这个", "那个", "什么", "如何",
+        "为什么", "怎么", "可以", "应该", "需要", "想要"
+      ]
+    }
+  },
+  
+  "custom": {
+    "description": "用户自定义的泛化词（随时添加）",
+    "words": [
+      "示例", "例子", "测试", "实验", "尝试"
+    ]
+  }
+}

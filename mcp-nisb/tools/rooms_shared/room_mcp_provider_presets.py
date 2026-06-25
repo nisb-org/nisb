@@ -654,6 +654,431 @@ def _provider_schema_exa(locale: Any = None) -> Dict[str, Any]:
     )
 
 
+def _provider_schema_pixabay(locale: Any = None) -> Dict[str, Any]:
+    configured = _env_configured("PIXABAY_API_KEY")
+    return _build_builtin_external_provider_schema(
+        provider_id="pixabay",
+        label_i18n=text_i18n("Pixabay Assets", "Pixabay 素材"),
+        description_i18n=text_i18n(
+            "Search free image, video, and music candidates for YouTube B-roll, thumbnails, and background music planning.",
+            "检索免费图片、视频和音乐候选，适合 YouTube B-roll、封面图和背景音乐规划。",
+        ),
+        tool_templates=[
+            {
+                "tool_name": "search_images",
+                "label_i18n": text_i18n("Image search", "图片检索"),
+                "description_i18n": text_i18n(
+                    "Search Pixabay images and return page links, previews, creators, tags, and license notes.",
+                    "检索 Pixabay 图片，返回页面链接、预览图、作者、标签与授权提示。",
+                ),
+                "requested_mode": "mcp",
+            },
+            {
+                "tool_name": "search_videos",
+                "label_i18n": text_i18n("Video search", "视频检索"),
+                "description_i18n": text_i18n(
+                    "Search Pixabay videos for B-roll candidates without downloading files.",
+                    "检索 Pixabay 视频素材候选，不自动下载文件。",
+                ),
+                "requested_mode": "mcp",
+            },
+            {
+                "tool_name": "search_music",
+                "label_i18n": text_i18n("Music search", "音乐检索"),
+                "description_i18n": text_i18n(
+                    "Search Pixabay music candidates for background music planning.",
+                    "检索 Pixabay 音乐候选，适合背景音乐规划。",
+                ),
+                "requested_mode": "mcp",
+            },
+        ],
+        params_schema=_params_schema(
+            {
+                "query": _string_property(
+                    title_i18n=text_i18n("Query", "搜索词"),
+                    description_i18n=text_i18n(
+                        "Defaults to the current user question as the query.",
+                        "默认会以当前用户问题作为 query。",
+                    ),
+                ),
+                "per_page": _integer_property(
+                    title_i18n=text_i18n("Number of results", "结果数量"),
+                    default=6,
+                    minimum=1,
+                    maximum=20,
+                ),
+                "page": _integer_property(
+                    title_i18n=text_i18n("Page", "页码"),
+                    default=1,
+                    minimum=1,
+                ),
+                "safe_search": _enum_property(
+                    title_i18n=text_i18n("Safe search", "安全搜索"),
+                    default="true",
+                    enum=["true", "false"],
+                ),
+                "lang": _string_property(
+                    title_i18n=text_i18n("Language", "语言"),
+                    description_i18n=text_i18n(
+                        "Optional Pixabay language code, such as en or zh.",
+                        "可选 Pixabay 语言代码，例如 en 或 zh。",
+                    ),
+                    default="",
+                ),
+                "category": _string_property(
+                    title_i18n=text_i18n("Category", "分类"),
+                    description_i18n=text_i18n(
+                        "Optional Pixabay category if supported by the selected endpoint.",
+                        "可选 Pixabay 分类；是否生效取决于当前检索端点。",
+                    ),
+                    default="",
+                ),
+            },
+            [],
+            locale=locale,
+        ),
+        params_defaults={
+            "query": "{{user_query}}",
+            "per_page": 6,
+            "page": 1,
+            "safe_search": "true",
+            "lang": "",
+            "category": "",
+        },
+        auth_state=_auth_state(
+            auth_type="api_key",
+            required=True,
+            configured=configured,
+            config_key="PIXABAY_API_KEY",
+            message_i18n=text_i18n(
+                "Server-side PIXABAY_API_KEY is configured. Room roles do not need separate authentication.",
+                "需要服务端 PIXABAY_API_KEY；当前角色内不单独填写鉴权信息。",
+            )
+            if configured
+            else text_i18n(
+                "Missing server-side PIXABAY_API_KEY. This provider cannot be executed.",
+                "缺少服务端 PIXABAY_API_KEY，当前 provider 不可执行。",
+            ),
+            locale=locale,
+        ),
+        availability=_availability(
+            available=configured,
+            reason="" if configured else "missing_env:PIXABAY_API_KEY",
+            message_i18n=text_i18n("Provider is available.", "provider 可用。")
+            if configured
+            else text_i18n(
+                "Missing server environment variable PIXABAY_API_KEY.",
+                "缺少服务端环境变量 PIXABAY_API_KEY。",
+            ),
+            locale=locale,
+        ),
+        boundary_hint=_boundary_hint(
+            supports_workspace_context=False,
+            supports_focus_root=False,
+            default_inherit_workspace_context=False,
+            default_inherit_focus_root=False,
+            message_i18n=text_i18n(
+                "This is an external media-search provider and does not directly inherit workspace or focus_root file boundaries. Refine the query with subject, style, format, or mood.",
+                "这是外部媒体检索 provider，不直接继承 workspace / focus_root 文件边界；建议在 query 中写清主题、风格、格式或情绪。",
+            ),
+            locale=locale,
+        ),
+        capabilities={
+            "web": False,
+            "mcp": True,
+            "code": False,
+            "fs_read": False,
+            "fs_write": False,
+        },
+        locale=locale,
+    )
+
+
+def _provider_schema_freesound(locale: Any = None) -> Dict[str, Any]:
+    configured = _env_configured("FREESOUND_API_KEY")
+    return _build_builtin_external_provider_schema(
+        provider_id="freesound",
+        label_i18n=text_i18n("Freesound Audio", "Freesound 音效"),
+        description_i18n=text_i18n(
+            "Search sound effects, ambience, transitions, and audio details for YouTube sound design.",
+            "检索音效、环境音、转场声与音频详情，适合 YouTube sound design。",
+        ),
+        tool_templates=[
+            {
+                "tool_name": "search_sounds",
+                "label_i18n": text_i18n("Sound search", "音效检索"),
+                "description_i18n": text_i18n(
+                    "Search Freesound sounds and return preview URLs, duration, license, creator, tags, and risk notes.",
+                    "检索 Freesound 声音，返回预览地址、时长、授权、作者、标签与风险提示。",
+                ),
+                "requested_mode": "mcp",
+            },
+            {
+                "tool_name": "get_sound_detail",
+                "label_i18n": text_i18n("Sound detail", "音效详情"),
+                "description_i18n": text_i18n(
+                    "Fetch one Freesound sound detail by sound_id.",
+                    "按 sound_id 获取单个 Freesound 声音详情。",
+                ),
+                "requested_mode": "mcp",
+            },
+        ],
+        params_schema=_params_schema(
+            {
+                "query": _string_property(
+                    title_i18n=text_i18n("Query", "搜索词"),
+                    description_i18n=text_i18n(
+                        "Defaults to the current user question for search_sounds.",
+                        "search_sounds 默认会以当前用户问题作为 query。",
+                    ),
+                ),
+                "limit": _integer_property(
+                    title_i18n=text_i18n("Number of results", "结果数量"),
+                    default=8,
+                    minimum=1,
+                    maximum=30,
+                ),
+                "page": _integer_property(
+                    title_i18n=text_i18n("Page", "页码"),
+                    default=1,
+                    minimum=1,
+                ),
+                "filter": _string_property(
+                    title_i18n=text_i18n("Filter", "过滤条件"),
+                    description_i18n=text_i18n(
+                        "Optional Freesound filter syntax, such as tag:whoosh.",
+                        "可选 Freesound filter 语法，例如 tag:whoosh。",
+                    ),
+                    default="",
+                ),
+                "sort": _enum_property(
+                    title_i18n=text_i18n("Sort", "排序"),
+                    default="score",
+                    enum=[
+                        "score",
+                        "duration_desc",
+                        "duration_asc",
+                        "created_desc",
+                        "created_asc",
+                        "downloads_desc",
+                        "downloads_asc",
+                        "rating_desc",
+                        "rating_asc",
+                    ],
+                ),
+                "duration_min": _string_property(
+                    title_i18n=text_i18n("Min duration", "最短时长"),
+                    default="",
+                ),
+                "duration_max": _string_property(
+                    title_i18n=text_i18n("Max duration", "最长时长"),
+                    default="",
+                ),
+                "license": _enum_property(
+                    title_i18n=text_i18n("License", "授权"),
+                    default="",
+                    enum=["", "CC0", "Attribution", "Attribution NonCommercial"],
+                ),
+                "sound_id": _string_property(
+                    title_i18n=text_i18n("Sound ID", "声音 ID"),
+                    description_i18n=text_i18n(
+                        "Required only for get_sound_detail.",
+                        "仅 get_sound_detail 需要。",
+                    ),
+                    default="",
+                ),
+            },
+            [],
+            locale=locale,
+        ),
+        params_defaults={
+            "query": "{{user_query}}",
+            "limit": 8,
+            "page": 1,
+            "filter": "",
+            "sort": "score",
+            "duration_min": "",
+            "duration_max": "",
+            "license": "",
+            "sound_id": "",
+        },
+        auth_state=_auth_state(
+            auth_type="api_key",
+            required=True,
+            configured=configured,
+            config_key="FREESOUND_API_KEY",
+            message_i18n=text_i18n(
+                "Server-side FREESOUND_API_KEY is configured. Room roles do not need separate authentication.",
+                "需要服务端 FREESOUND_API_KEY；当前角色内不单独填写鉴权信息。",
+            )
+            if configured
+            else text_i18n(
+                "Missing server-side FREESOUND_API_KEY. This provider cannot be executed.",
+                "缺少服务端 FREESOUND_API_KEY，当前 provider 不可执行。",
+            ),
+            locale=locale,
+        ),
+        availability=_availability(
+            available=configured,
+            reason="" if configured else "missing_env:FREESOUND_API_KEY",
+            message_i18n=text_i18n("Provider is available.", "provider 可用。")
+            if configured
+            else text_i18n(
+                "Missing server environment variable FREESOUND_API_KEY.",
+                "缺少服务端环境变量 FREESOUND_API_KEY。",
+            ),
+            locale=locale,
+        ),
+        boundary_hint=_boundary_hint(
+            supports_workspace_context=False,
+            supports_focus_root=False,
+            default_inherit_workspace_context=False,
+            default_inherit_focus_root=False,
+            message_i18n=text_i18n(
+                "This is an external sound-search provider and does not directly inherit workspace or focus_root file boundaries. Use filters and duration limits to narrow results.",
+                "这是外部音频检索 provider，不直接继承 workspace / focus_root 文件边界；建议用 filter 与时长范围收窄结果。",
+            ),
+            locale=locale,
+        ),
+        capabilities={
+            "web": False,
+            "mcp": True,
+            "code": False,
+            "fs_read": False,
+            "fs_write": False,
+        },
+        locale=locale,
+    )
+
+
+def _provider_schema_openai_tts(locale: Any = None) -> Dict[str, Any]:
+    configured = _env_configured("OPENAI_API_KEY")
+    return _build_builtin_external_provider_schema(
+        provider_id="openai_tts",
+        label_i18n=text_i18n("OpenAI TTS", "OpenAI 旁白"),
+        description_i18n=text_i18n(
+            "Generate narration audio from text using OpenAI's speech endpoint for YouTube voiceover workflows.",
+            "使用 OpenAI speech 接口将文本生成旁白音频，适合 YouTube 旁白工作流。",
+        ),
+        tool_templates=[
+            {
+                "tool_name": "text_to_speech",
+                "label_i18n": text_i18n("Text to speech", "文本转语音"),
+                "description_i18n": text_i18n(
+                    "Generate speech audio from text. The result is returned as base64 and no public workspace file is written.",
+                    "从文本生成语音；结果以 base64 返回，不写入公开 workspace 文件。",
+                ),
+                "requested_mode": "mcp",
+            },
+            {
+                "tool_name": "list_voices",
+                "label_i18n": text_i18n("List voices", "列出声音"),
+                "description_i18n": text_i18n(
+                    "List built-in OpenAI TTS voice candidates.",
+                    "列出 OpenAI TTS 内置声音候选。",
+                ),
+                "requested_mode": "mcp",
+            },
+        ],
+        params_schema=_params_schema(
+            {
+                "text": _string_property(
+                    title_i18n=text_i18n("Text", "文本"),
+                    description_i18n=text_i18n(
+                        "Defaults to the current user question for text_to_speech.",
+                        "text_to_speech 默认使用当前用户问题作为文本。",
+                    ),
+                ),
+                "voice": _string_property(
+                    title_i18n=text_i18n("Voice", "声音"),
+                    description_i18n=text_i18n(
+                        "Built-in voice name, such as alloy, ash, ballad, coral, echo, or fable.",
+                        "内置声音名称，例如 alloy、ash、ballad、coral、echo 或 fable。",
+                    ),
+                    default="alloy",
+                ),
+                "model": _string_property(
+                    title_i18n=text_i18n("Model", "模型"),
+                    default="gpt-4o-mini-tts",
+                ),
+                "instructions": _string_property(
+                    title_i18n=text_i18n("Instructions", "声音指令"),
+                    description_i18n=text_i18n(
+                        "Optional speaking style guidance, such as calm documentary narrator.",
+                        "可选声音风格指令，例如 calm documentary narrator。",
+                    ),
+                    default="",
+                ),
+                "speed": _string_property(
+                    title_i18n=text_i18n("Speed", "速度"),
+                    default="",
+                ),
+                "response_format": _enum_property(
+                    title_i18n=text_i18n("Response format", "音频格式"),
+                    default="mp3",
+                    enum=["mp3", "wav", "opus", "aac", "flac", "pcm"],
+                ),
+            },
+            [],
+            locale=locale,
+        ),
+        params_defaults={
+            "text": "{{user_query}}",
+            "voice": "alloy",
+            "model": "gpt-4o-mini-tts",
+            "instructions": "",
+            "speed": "",
+            "response_format": "mp3",
+        },
+        auth_state=_auth_state(
+            auth_type="api_key",
+            required=True,
+            configured=configured,
+            config_key="OPENAI_API_KEY",
+            message_i18n=text_i18n(
+                "Server-side OPENAI_API_KEY is configured. Room roles do not need separate authentication.",
+                "需要服务端 OPENAI_API_KEY；当前角色内不单独填写鉴权信息。",
+            )
+            if configured
+            else text_i18n(
+                "Missing server-side OPENAI_API_KEY. This provider cannot be executed.",
+                "缺少服务端 OPENAI_API_KEY，当前 provider 不可执行。",
+            ),
+            locale=locale,
+        ),
+        availability=_availability(
+            available=configured,
+            reason="" if configured else "missing_env:OPENAI_API_KEY",
+            message_i18n=text_i18n("Provider is available.", "provider 可用。")
+            if configured
+            else text_i18n(
+                "Missing server environment variable OPENAI_API_KEY.",
+                "缺少服务端环境变量 OPENAI_API_KEY。",
+            ),
+            locale=locale,
+        ),
+        boundary_hint=_boundary_hint(
+            supports_workspace_context=False,
+            supports_focus_root=False,
+            default_inherit_workspace_context=False,
+            default_inherit_focus_root=False,
+            message_i18n=text_i18n(
+                "This is an external TTS provider. It does not read workspace files and does not write public workspace artifacts.",
+                "这是外部 TTS provider；不会读取 workspace 文件，也不会写入公开 workspace artifact。",
+            ),
+            locale=locale,
+        ),
+        capabilities={
+            "web": False,
+            "mcp": True,
+            "code": False,
+            "fs_read": False,
+            "fs_write": False,
+        },
+        locale=locale,
+    )
+
+
 def get_room_mcp_provider_registry(locale: Any = None) -> Dict[str, Dict[str, Any]]:
     selected_locale = normalize_backend_locale(locale)
     return {
@@ -661,9 +1086,13 @@ def get_room_mcp_provider_registry(locale: Any = None) -> Dict[str, Dict[str, An
         "exa": _provider_schema_exa(selected_locale),
         "pexels": _provider_schema_pexels(selected_locale),
         "serper": _provider_schema_serper(selected_locale),
+        "freesound": _provider_schema_freesound(selected_locale),
+        "pixabay": _provider_schema_pixabay(selected_locale),
+        "openai_tts": _provider_schema_openai_tts(selected_locale),
     }
 
 
 __all__ = [
     "get_room_mcp_provider_registry",
 ]
+

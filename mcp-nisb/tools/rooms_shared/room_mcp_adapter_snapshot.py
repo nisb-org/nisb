@@ -8,6 +8,9 @@ from .room_mcp_provider_arxiv import execute_room_mcp_provider_arxiv
 from .room_mcp_provider_exa import execute_room_mcp_provider_exa
 from .room_mcp_provider_pexels import execute_room_mcp_provider_pexels
 from .room_mcp_provider_serper import execute_room_mcp_provider_serper
+from .room_mcp_provider_freesound import execute_room_mcp_provider_freesound
+from .room_mcp_provider_pixabay import execute_room_mcp_provider_pixabay
+from .room_mcp_provider_openai_tts import execute_room_mcp_provider_openai_tts
 from .room_mcp_provider_invoke_contract import hydrate_provider_invoke_contract
 from .room_mcp_adapter_provider_context import (
     _build_provider_dispatch_request_args,
@@ -52,6 +55,9 @@ def _get_room_mcp_provider_executors() -> Dict[str, ProviderExecutor]:
         "arxiv": execute_room_mcp_provider_arxiv,
         "pexels": execute_room_mcp_provider_pexels,
         "exa": execute_room_mcp_provider_exa,
+        "pixabay": execute_room_mcp_provider_pixabay,
+        "freesound": execute_room_mcp_provider_freesound,
+        "openai_tts": execute_room_mcp_provider_openai_tts,
     }
 
 
@@ -145,3 +151,4 @@ __all__ = [
     "_safe_list",
     "_validate_provider_params",
 ]
+

@@ -590,7 +590,7 @@ def quick_sync_modules(
     _invalidate_db_warm_state(base_path)
     return stats
 
-
+    
 __all__ = [
     "get_index_db_path",
     "open_index",
@@ -632,3 +632,4 @@ __all__ = [
     "sync_library_doc_dirs",
     "sync_library_loose_files",
 ]
+

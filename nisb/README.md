@@ -2,10 +2,6 @@
 
 **NISB is a self-hosted AI workspace for notes, files, documents, RSS, evidence, Rooms, and MCP capabilities.**
 
-**Demo:** [https://youtu.be/8cEAmJpn0EY](https://youtu.be/8cEAmJpn0EY)
-
-**Support / Remote Install:** [https://ko-fi.com/nisbdev](https://ko-fi.com/nisbdev)
-
 It is also a workspace where Rooms can become callable, shareable, revocable, and composable MCP capabilities.
 
 NISB combines a daily Markdown/file workspace, long-lived knowledge libraries, RSS-to-RAG workflows, evidence-based search, supervisor/worker Rooms, MCP publishing, NISB-to-NISB federation, and a small-VPS deployment model.
@@ -153,16 +149,18 @@ This makes a Room more than a conversation. It becomes a reusable, controlled, e
 
 ## What NISB is not
 
-NISB is not a ChatGPT-style chat interface, and it is not a replacement for existing tools.
+NISB is not intended to be just another ChatGPT-style interface.
 
-A clearer way to understand the positioning:
+It is also not positioned as a direct replacement for tools such as LibreChat, Dify, Open WebUI, AnythingLLM, Obsidian, Logseq, Notion, or other AI and PKM platforms.
 
-- LibreChat is a capable MCP-aware chat client and conversation platform.
+A better way to understand the difference:
+
+- LibreChat is a strong MCP-capable chat client and AI conversation platform.
 - Obsidian and Logseq are note-first PKM tools.
-- Dify is a workflow and application builder.
+- Dify is a strong workflow and application builder.
 - NISB focuses on a self-hosted AI workspace with an evidence layer, workspace-aware Rooms, MCP publishing, federation, and composable capability sharing.
 
-These tools can work alongside NISB. For example, a NISB Room can be published as an MCP capability and called from LibreChat.
+NISB can work alongside existing tools. For example, a NISB Room can be published as MCP and called from LibreChat.
 
 ---
 
@@ -188,28 +186,14 @@ This model is optimized for:
 
 ---
 
-## Redeployable by design
-
-NISB keeps the main workspace state under a persistent data directory separate from the application.
-
-A fresh deployment can be completed using a standard set of commands. The main user state, including notes, files, libraries, evidence stores, Room notebooks, and workspace configuration, lives under `/opt/nisb-data`.
-
-Moving or restoring a NISB instance primarily means redeploying the application and moving the data directory. No manual reconstruction of configuration scattered across multiple services or external dependencies is required to restore a working workspace.
-
-This matters for self-hosted AI workspaces. Workspace state should not be trapped inside a fragile, one-off setup that is difficult to reproduce, back up, or move.
-
----
-
 ## Quick start
-
-> For assisted setup, Remote Install is available: [https://ko-fi.com/nisbdev/commissions](https://ko-fi.com/nisbdev/commissions)
 
 A typical manual deployment flow is:
 
 1. Prepare a fresh Ubuntu 24.04 VPS.
 2. Configure DNS, for example through Cloudflare.
 3. Install Docker Engine and Docker Compose v2.
-4. Clone the project to `/opt/mcp-gateway/nisb`.
+4. Upload or clone the project to `/opt/mcp-gateway/nisb`.
 5. Prepare persistent data under `/opt/nisb-data`.
 6. Copy and edit the environment file.
 7. Build and start the services.
@@ -318,6 +302,32 @@ If NISB helps you, you can support continued development on Ko-fi:
 Remote Install is an assisted setup service for one self-hosted deployment. It does not include commercial licensing, closed-source integration rights, hosted/SaaS rights, private redistribution rights, custom feature development, long-term managed hosting, or production SLA.
 
 Commercial licensing, closed-source integration, hosted/SaaS use, private redistribution, enterprise/team customization, partnership, and investment inquiries should use `license@nisb.me`.
+
+---
+
+## Safety notes
+
+Do not publish secrets or runtime data in a public repository.
+
+Do not publish:
+
+- `.env`
+- `*.env`
+- `/opt/nisb-data/`
+- Databases
+- Logs
+- TLS certificates
+- API keys
+- Cloudflare credentials
+- Bearer tokens
+- Private MCP endpoints
+- User-uploaded documents
+- Private RAG libraries
+- Private Room histories
+- Private workspace snapshots
+- Private federation tokens
+
+Before publishing the repository, review deployment files, example configs, logs, screenshots, demo data, and generated artifacts carefully.
 
 ---
 
