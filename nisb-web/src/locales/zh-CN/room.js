@@ -1403,6 +1403,22 @@ export default {
       }
     },
 
+    validation: {
+      nameRequired: '角色名称不能为空',
+      timeConflict: '时间范围只能二选一：time_filter_days 或 time_start/time_end',
+      timeRangeBothRequired: '区间模式必须同时填写 time_start 和 time_end',
+      timeStartAfterEnd: 'time_start 不能晚于 time_end',
+      mcpProviderRequired: '开启 MCP 后必须选择 provider',
+      providerNotInRegistry: '当前 provider 未进入本地目录，且缺少 imported provider snapshot，当前不能保存',
+      providerUnavailable: '当前 provider 不可用',
+      importedProviderMissingSnapshot: 'imported provider 缺少稳定 snapshot，当前不能保存',
+      importedRoomProviderMissingSourceId: 'imported room provider 缺少 source_room_id，当前不能保存',
+      roomProviderMissingSourceId: 'room provider 缺少 source_room_id，当前不能保存',
+      roomProviderPrivateScopeExposed: 'room provider boundary 非法：owner private scope 不应暴露',
+      roomProviderInheritWorkspace: 'room provider 不允许在 consumer 侧启用 inherit_workspace_context',
+      roomProviderInheritFocusRoot: 'room provider 不允许在 consumer 侧启用 inherit_focus_root',
+    },
+
     messages: {
       providerSelected: '已选择 provider：{provider}',
       loadProviderRegistryFailed: '加载 provider 目录失败',
@@ -1456,11 +1472,13 @@ export default {
       },
       libraryId: {
         label: 'library_id',
-        placeholder: '可空'
+        placeholder: '可空',
+        loading: '加载中…'
       },
       groupId: {
         label: 'group_id',
-        placeholder: '可空'
+        placeholder: '可空',
+        loading: '加载中…'
       },
       docId: {
         label: 'doc_id',
@@ -1664,4 +1682,3 @@ export default {
     }
   }
 }
-
