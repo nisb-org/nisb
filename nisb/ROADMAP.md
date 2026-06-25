@@ -8,20 +8,20 @@ It is not a promise, contract, SLA, or guarantee. Priorities may change based on
 
 ## Current status
 
-NISB V1 is focused on a stable self-hosted release.
+NISB V1 is the first public release.
 
-The current release work is primarily about:
+The initial release includes:
 
-- Bug fixes.
-- UI polish.
-- Frontend i18n completion.
-- Backend user-facing message cleanup.
-- Documentation.
-- Release checklist verification.
-- Installation and migration validation.
-- Demo preparation.
+- Self-hosted Docker Compose deployment on Ubuntu VPS with Caddy.
+- Markdown and file workspace with four-source search.
+- Document and RSS-to-RAG evidence libraries.
+- Workspace-aware Room runtime with supervisor and workers.
+- Room publishing as an external MCP capability.
+- LibreChat / MCP-compatible external client integration.
+- NISB-to-NISB federation with room-scoped grants, revoke, and expiry.
+- Composable Room capabilities: a federated Room can become a worker inside another Room.
 
-NISB V1 is intended to provide a usable self-hosted foundation rather than a toy demo.
+The V1 focus is reliability and clarity over aggressive automation.
 
 ---
 
@@ -72,23 +72,17 @@ Commercial licensing, deployment help, technical support, priority support, priv
 
 ---
 
-## Near-term release goals
+## Near-term goals
 
-The near-term release goals are:
+Near-term work is focused on:
 
-- Clean public repository.
-- Safer installation documentation.
-- Clear migration documentation.
-- Release checklist completion.
-- Better dependency and license reporting.
+- More screenshots and diagrams for workspace, Room, and federation flows.
+- Shorter single-topic demo videos.
+- Better runtime trace and error visibility for Room workflows.
+- Structured error classification for Room-as-MCP edge cases, including circular references.
 - Better frontend i18n coverage.
-- Better backend user-facing message consistency.
-- UI polish and layout consistency.
-- More screenshots and demo videos.
-- A clear Hacker News / GitHub / YouTube launch narrative.
-- Manual deployment validation before installer automation.
-
-The first release should prioritize reliability, clarity, and trust.
+- Safer bootstrap and upgrade scripts after manual path is stable.
+- More deployment examples.
 
 ---
 
@@ -250,12 +244,8 @@ Future deployment work may include:
 - More deployment examples.
 - Optional managed setup paths.
 
-The recommended release path is:
-
-1. Validate manual installation.
-2. Stabilize documentation.
-3. Verify migration and rollback.
-4. Automate only after the manual process is proven safe.
+The current deployment path is manual installation via Docker Compose.
+A guided bootstrap script and automated upgrade path are planned after the manual path is stable.
 
 ---
 
