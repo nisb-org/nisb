@@ -10,16 +10,11 @@
         <button
           class="mini-btn ghost"
           :disabled="qaLoading || !ctxReady || !qaIndex.rootIds.length"
-          @click="collapseAllRoots()"
+          @click="expandedRootSet.size > 0 ? collapseAllRoots() : expandAllRoots()"
         >
-          {{ t('rightSidebar.topicQA.actions.collapseAll') }}
-        </button>
-        <button
-          class="mini-btn ghost"
-          :disabled="qaLoading || !ctxReady || !qaIndex.rootIds.length"
-          @click="expandAllRoots()"
-        >
-          {{ t('rightSidebar.topicQA.actions.expandAll') }}
+          {{ expandedRootSet.size > 0
+            ? t('rightSidebar.topicQA.actions.collapseAll')
+            : t('rightSidebar.topicQA.actions.expandAll') }}
         </button>
         <button class="mini-btn" :disabled="qaLoading || !ctxReady" @click="refreshQA()">
           {{ t('rightSidebar.topicQA.actions.refresh') }}
@@ -71,7 +66,11 @@
         v-for="view in qaIndex.visibleItems"
         :key="view.qa_id"
         class="qa-item"
-        :class="{ reply: !view.isRoot, root: view.isRoot }"
+        :class="{
+          reply: !view.isRoot,
+          root: view.isRoot,
+          collapsed: view.isRoot && !isRootExpanded(view.qa_id)
+        }"
         :style="{ marginLeft: indentPx(view.depth) }"
         :data-qa-id="view.qa_id"
       >
@@ -101,16 +100,6 @@
 
           <div class="qa-q-actions">
             <button
-              v-if="view.isRoot"
-              class="mini-btn ghost root-toggle-btn"
-              :disabled="qaLoading"
-              @click.stop="toggleRoot(view.qa_id)"
-              :title="isRootExpanded(view.qa_id) ? t('rightSidebar.topicQA.actions.collapseThread') : t('rightSidebar.topicQA.actions.expandThread')"
-            >
-              {{ isRootExpanded(view.qa_id) ? t('rightSidebar.topicQA.actions.collapse') : t('rightSidebar.topicQA.actions.expand') }}
-            </button>
-
-            <button
               class="qa-del"
               :title="t('rightSidebar.topicQA.actions.delete')"
               :disabled="qaLoading"
@@ -121,9 +110,15 @@
           </div>
         </div>
 
-        <div class="qa-a">{{ view.node.answer || view.node.response || '' }}</div>
+        <div
+          class="qa-a"
+          v-show="!view.isRoot || isRootExpanded(view.qa_id)"
+        >{{ view.node.answer || view.node.response || '' }}</div>
 
-        <div class="qa-meta muted" v-if="view.node?.params || view.node?.llm">
+        <div
+          class="qa-meta muted"
+          v-if="(view.node?.params || view.node?.llm) && (!view.isRoot || isRootExpanded(view.qa_id))"
+        >
           <span class="qa-badge" :class="badgeClass(view.node)">{{ badgeText(view.node) }}</span>
 
           <span class="qa-meta-text">
@@ -293,7 +288,7 @@
           </div>
         </div>
 
-        <div v-if="Array.isArray(view.node.citations) && view.node.citations.length" class="qa-ev">
+        <div v-if="Array.isArray(view.node.citations) && view.node.citations.length && (!view.isRoot || isRootExpanded(view.qa_id))" class="qa-ev">
           <div class="qa-ev-title muted">{{ t('rightSidebar.topicQA.citations.title') }}</div>
           <div class="qa-ev-list">
             <button
@@ -427,7 +422,7 @@ function shortId(s) {
   const t0 = String(s || '')
   if (!t0) return ''
   if (t0.length <= 10) return t0
-  return t0.slice(0, 5) + '…' + t0.slice(-3)
+  return t0.slice(0, 5) + '\u2026' + t0.slice(-3)
 }
 
 function citationTitle(c) {
@@ -747,7 +742,7 @@ function hasEvidence(node) {
 
 function formatRel(ev) {
   const r = Number(ev?.relevance)
-  if (!Number.isFinite(r)) return '—'
+  if (!Number.isFinite(r)) return '\u2014'
   return `${(r * 100).toFixed(1)}%`
 }
 
@@ -967,12 +962,12 @@ function buildHandoffContext(fromScope, node) {
   })
 
   const parts = []
-  parts.push(`【Handoff From】scope=${fromScope}`)
-  if (q) parts.push(`【Question】\n${q}`)
-  if (topClaims.length) parts.push(`【Key Points】\n${topClaims.join('\n')}`)
-  if (a) parts.push(`【Answer (excerpt)】\n${a.slice(0, 1200)}`)
-  if (topEv.length) parts.push(`【Top Evidence】\n${topEv.join('\n')}`)
-  if (topCites.length) parts.push(`【Top Citations】\n${topCites.join('\n')}`)
+  parts.push(`[Handoff From] scope=${fromScope}`)
+  if (q) parts.push(`[Question]\n${q}`)
+  if (topClaims.length) parts.push(`[Key Points]\n${topClaims.join('\n')}`)
+  if (a) parts.push(`[Answer (excerpt)]\n${a.slice(0, 1200)}`)
+  if (topEv.length) parts.push(`[Top Evidence]\n${topEv.join('\n')}`)
+  if (topCites.length) parts.push(`[Top Citations]\n${topCites.join('\n')}`)
   return parts.join('\n\n').trim()
 }
 
@@ -1472,6 +1467,16 @@ watch(
     0 9px 20px rgba(0, 0, 0, 0.06);
 }
 
+/* collapsed root: clamp question to one line */
+.qa-item.collapsed .qa-q {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+
 .qa-q-row {
   min-width: 0;
   display: flex;
@@ -1892,10 +1897,6 @@ watch(
   font-weight: 720;
 }
 
-.root-toggle-btn {
-  max-width: 92px;
-}
-
 .qa-del {
   flex: 0 0 auto;
   width: 24px;
@@ -2013,4 +2014,3 @@ watch(
   }
 }
 </style>
-
