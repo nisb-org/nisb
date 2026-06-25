@@ -1051,6 +1051,8 @@ async function askQA() {
     if (res?.status === 'success') {
       qaQuestion.value = ''
       await refreshQA()
+      const newest = qaIndex.value.rootIds[0]
+      if (newest) ensureRootExpandedByQaId(newest)
       window.dispatchEvent(new CustomEvent('nisb-timeline-refresh'))
     } else {
       qaError.value = res?.message ? String(res.message) : t('rightSidebar.topicQA.errors.qaAskNonSuccess')
@@ -1078,8 +1080,10 @@ async function askFollowUp(parentQaId) {
     )
 
     if (res?.status === 'success') {
+      const pid = String(parentQaId || '')
       closeFollowUp()
       await refreshQA()
+      if (pid) ensureRootExpandedByQaId(pid)
       window.dispatchEvent(new CustomEvent('nisb-timeline-refresh'))
     } else {
       qaError.value = res?.message ? String(res.message) : t('rightSidebar.topicQA.errors.followupNonSuccess')
