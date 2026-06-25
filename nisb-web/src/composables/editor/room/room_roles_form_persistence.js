@@ -282,8 +282,12 @@ export function buildPayload(form, providerOptions = []) {
   }
 }
 
-export function validateRolePayload(payload, providerOptions = []) {
-  if (!safeString(payload?.name)) return '角色名称不能为空'
+export function validateRolePayload(payload, providerOptions = [], t = null) {
+  const msg = (key, fallback) => (t ? t(key) : fallback)
+
+  if (!safeString(payload?.name)) {
+    return msg('room.rolesDrawer.validation.nameRequired', 'Role name is required')
+  }
 
   const kb = safeObject(payload?.knowledge_binding)
   const rawDays = Number(kb.time_filter_days)
@@ -292,24 +296,26 @@ export function validateRolePayload(payload, providerOptions = []) {
   const hasEnd = !!safeString(kb.time_end)
 
   if (hasDays && (hasStart || hasEnd)) {
-    return '时间范围只能二选一：time_filter_days 或 time_start/time_end'
+    return msg('room.rolesDrawer.validation.timeConflict', 'Use either time_filter_days or time_start/time_end, not both')
   }
 
   if (!hasDays && (hasStart || hasEnd) && !(hasStart && hasEnd)) {
-    return '区间模式必须同时填写 time_start 和 time_end'
+    return msg('room.rolesDrawer.validation.timeRangeBothRequired', 'Both time_start and time_end are required for range mode')
   }
 
   if (!hasDays && hasStart && hasEnd) {
     const startMs = Date.parse(kb.time_start)
     const endMs = Date.parse(kb.time_end)
     if (Number.isFinite(startMs) && Number.isFinite(endMs) && startMs > endMs) {
-      return 'time_start 不能晚于 time_end'
+      return msg('room.rolesDrawer.validation.timeStartAfterEnd', 'time_start must not be later than time_end')
     }
   }
 
   if (safeBool(payload?.tool_policy?.mcp, false)) {
     const providerId = safeString(payload?.mcp_binding?.provider_id).toLowerCase()
-    if (!providerId) return '开启 MCP 后必须选择 provider'
+    if (!providerId) {
+      return msg('room.rolesDrawer.validation.mcpProviderRequired', 'A provider must be selected when MCP is enabled')
+    }
 
     const snapshot = normalizeProviderSnapshot(
       payload?.mcp_provider_snapshot ||
@@ -318,21 +324,22 @@ export function validateRolePayload(payload, providerOptions = []) {
 
     const provider = resolveProviderForBinding(providerOptions, providerId, snapshot)
     if (!provider) {
-      return '当前 provider 未进入本地目录，且缺少 imported provider snapshot，当前不能保存'
+      return msg('room.rolesDrawer.validation.providerNotInRegistry', 'Provider is not in the local registry and has no imported snapshot; cannot save')
     }
 
     const available = provider?.availability?.available
     if (available === false) {
-      return safeString(provider?.availability?.reason, '当前 provider 不可用')
+      return safeString(provider?.availability?.reason) ||
+        msg('room.rolesDrawer.validation.providerUnavailable', 'The selected provider is currently unavailable')
     }
 
     if (isImportedRemoteProvider(provider)) {
       if (!snapshot.provider_id || !snapshot.provider_type) {
-        return 'imported provider 缺少稳定 snapshot，当前不能保存'
+        return msg('room.rolesDrawer.validation.importedProviderMissingSnapshot', 'Imported provider is missing a stable snapshot; cannot save')
       }
 
       if (!safeString(snapshot.room_source?.room_id) && safeString(snapshot.provider_type) === 'room_shared_capability') {
-        return 'imported room provider 缺少 source_room_id，当前不能保存'
+        return msg('room.rolesDrawer.validation.importedRoomProviderMissingSourceId', 'Imported room provider is missing source_room_id; cannot save')
       }
     }
 
@@ -341,19 +348,19 @@ export function validateRolePayload(payload, providerOptions = []) {
       const sharedBoundary = safeObject(roomSource?.shared_boundary)
 
       if (!safeString(roomSource.room_id)) {
-        return 'room provider 缺少 source_room_id，当前不能保存'
+        return msg('room.rolesDrawer.validation.roomProviderMissingSourceId', 'Room provider is missing source_room_id; cannot save')
       }
 
       if (safeBool(sharedBoundary.owner_private_scope_exposed, false)) {
-        return 'room provider boundary 非法：owner private scope 不应暴露'
+        return msg('room.rolesDrawer.validation.roomProviderPrivateScopeExposed', 'Invalid room provider boundary: owner private scope must not be exposed')
       }
 
       if (safeBool(payload?.mcp_binding?.inherit_workspace_context, false)) {
-        return 'room provider 不允许在 consumer 侧启用 inherit_workspace_context'
+        return msg('room.rolesDrawer.validation.roomProviderInheritWorkspace', 'Room provider does not allow inherit_workspace_context on the consumer side')
       }
 
       if (safeBool(payload?.mcp_binding?.inherit_focus_root, false)) {
-        return 'room provider 不允许在 consumer 侧启用 inherit_focus_root'
+        return msg('room.rolesDrawer.validation.roomProviderInheritFocusRoot', 'Room provider does not allow inherit_focus_root on the consumer side')
       }
     }
   }
