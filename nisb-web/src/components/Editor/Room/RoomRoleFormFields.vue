@@ -45,20 +45,38 @@
 
         <label class="field">
           <span>{{ t('room.roleFormFields.fields.libraryId.label') }}</span>
-          <input
-            v-model="form.library_id"
-            type="text"
-            :placeholder="t('room.roleFormFields.fields.libraryId.placeholder')"
-          />
+          <select v-model="form.library_id" :disabled="libraries_loading">
+            <option value="">
+              {{ libraries_loading
+                ? t('room.roleFormFields.fields.libraryId.loading')
+                : t('room.roleFormFields.fields.libraryId.placeholder') }}
+            </option>
+            <option
+              v-for="lib in libraries_list"
+              :key="lib.library_id"
+              :value="lib.library_id"
+            >
+              {{ lib.icon }} {{ lib.library_name }}（{{ lib.library_id }}）
+            </option>
+          </select>
         </label>
 
         <label class="field">
           <span>{{ t('room.roleFormFields.fields.groupId.label') }}</span>
-          <input
-            v-model="form.group_id"
-            type="text"
-            :placeholder="t('room.roleFormFields.fields.groupId.placeholder')"
-          />
+          <select v-model="form.group_id" :disabled="groups_loading">
+            <option value="">
+              {{ groups_loading
+                ? t('room.roleFormFields.fields.groupId.loading')
+                : t('room.roleFormFields.fields.groupId.placeholder') }}
+            </option>
+            <option
+              v-for="grp in groups_list"
+              :key="grp.group_id"
+              :value="grp.group_id"
+            >
+              {{ grp.icon }} {{ grp.group_name }}（{{ grp.group_id }}）
+            </option>
+          </select>
         </label>
 
         <label class="field">
@@ -287,10 +305,11 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref, watchEffect } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoomRoleFormTime } from '../../../composables/editor/room/use_room_role_form_time'
 import RoomRoleProviderBindingPanel from './RoomRoleProviderBindingPanel.vue'
+import { useMCP } from '../../../composables/useMCP'
 
 const props = defineProps({
   form: { type: Object, required: true },
@@ -300,6 +319,55 @@ const props = defineProps({
 })
 
 const { t } = useI18n()
+
+const { callTool } = useMCP()
+
+// ── Library list ──────────────────────────────────────────
+const libraries_list = ref([])
+const libraries_loading = ref(false)
+
+async function load_libraries() {
+  if (libraries_loading.value) return
+  libraries_loading.value = true
+  try {
+    const res = await callTool('nisb_library_list', {})
+    if (res && res.status === 'success') {
+      libraries_list.value = (Array.isArray(res.libraries) ? res.libraries : []).map((lib) => ({
+        library_id: lib.library_id || '',
+        library_name: lib.library_name || lib.name || lib.library_id || '',
+        icon: lib.icon || '🏛️',
+      })).filter((l) => !!l.library_id)
+    }
+  } catch { /* silent */ } finally {
+    libraries_loading.value = false
+  }
+}
+
+// ── Group list ──────────────────────────────────────
+const groups_list = ref([])
+const groups_loading = ref(false)
+
+async function load_groups() {
+  if (groups_loading.value) return
+  groups_loading.value = true
+  try {
+    const res = await callTool('nisb_library_group_list', {})
+    if (res && res.status === 'success') {
+      groups_list.value = (Array.isArray(res.groups) ? res.groups : []).map((g) => ({
+        group_id: g.group_id || '',
+        group_name: g.group_name || g.group_id || '',
+        icon: g.icon || '🧭',
+      })).filter((g) => !!g.group_id)
+    }
+  } catch { /* silent */ } finally {
+    groups_loading.value = false
+  }
+}
+
+onMounted(() => {
+  load_libraries()
+  load_groups()
+})
 
 const FALLBACK_TOOL_POLICY_KEYS = ['rag', 'web', 'mcp', 'code', 'fs_read', 'fs_write']
 
