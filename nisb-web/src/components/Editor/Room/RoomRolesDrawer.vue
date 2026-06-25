@@ -550,6 +550,7 @@ async function submitCreate() {
   const validationError = validateRolePayload(payload, providerOptions.value)
   if (validationError) {
     errorText.value = validationError
+    dispatchToast(validationError, 'error')  // ← 新增这一行
     return
   }
 
@@ -589,6 +590,7 @@ async function submitUpdate(roleId) {
   const validationError = validateRolePayload(payload, providerOptions.value)
   if (validationError) {
     errorText.value = validationError
+    dispatchToast(validationError, 'error')  // ← 新增这一行
     return
   }
 
