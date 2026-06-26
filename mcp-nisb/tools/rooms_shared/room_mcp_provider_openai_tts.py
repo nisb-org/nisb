@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-import base64
+import hashlib
 import json
 import os
+import re
+import time
+from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib.error import HTTPError
+from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 from .room_mcp_provider_i18n import mcp_provider_error_response
@@ -31,6 +35,74 @@ _MIME_BY_FORMAT = {
     "wav": "audio/wav",
     "pcm": "audio/pcm",
 }
+
+
+_AUDIO_EXTENSIONS = set(_MIME_BY_FORMAT.keys())
+_SAFE_ROOM_ID_RE = re.compile(r"^[A-Za-z0-9_.-]{1,120}$")
+_SAFE_FILENAME_RE = re.compile(r"^[A-Za-z0-9_.-]{1,180}$")
+
+
+def _data_root() -> Path:
+    return Path(os.getenv("NISB_BASE_PATH", "/data")).resolve()
+
+
+def _safe_room_id(room_id: Any) -> str:
+    rid = _safe_str(room_id).strip()
+    if not rid or "/" in rid or "\\" in rid or ".." in rid or not _SAFE_ROOM_ID_RE.match(rid):
+        raise RuntimeError("invalid_room_id")
+    return rid
+
+
+def _safe_audio_ext(response_format: Any) -> str:
+    ext = _safe_str(response_format).lower().strip().lstrip(".")
+    if ext not in _AUDIO_EXTENSIONS:
+        ext = "mp3"
+    return ext
+
+
+def _safe_filename_part(value: Any, fallback: str = "audio") -> str:
+    out = "".join(ch for ch in _safe_str(value).lower().strip() if ch.isalnum() or ch in {"-", "_"})
+    return (out[:48] or fallback)
+
+
+def _make_audio_filename(*, voice: str, response_format: str, text: str) -> str:
+    ext = _safe_audio_ext(response_format)
+    digest = hashlib.sha256(text.encode("utf-8", errors="ignore")).hexdigest()[:12]
+    ts = time.strftime("%Y%m%d_%H%M%S", time.gmtime())
+    safe_voice = _safe_filename_part(voice, "voice")
+    return f"tts_{safe_voice}_{ts}_{digest}.{ext}"
+
+
+def _room_audio_dir(room_id: str) -> Path:
+    rid = _safe_room_id(room_id)
+    root = _data_root()
+    path = (root / "shared" / "rooms" / rid / "assets" / "audio").resolve()
+    expected_parent = (root / "shared" / "rooms" / rid / "assets").resolve()
+    if expected_parent not in path.parents:
+        raise RuntimeError("invalid_room_audio_dir")
+    return path
+
+
+def _write_room_audio_file(room_id: str, audio_bytes: bytes, *, filename: str) -> Path:
+    if not _SAFE_FILENAME_RE.match(filename) or "/" in filename or "\\" in filename or ".." in filename:
+        raise RuntimeError("invalid_audio_filename")
+    audio_dir = _room_audio_dir(room_id)
+    audio_dir.mkdir(parents=True, exist_ok=True)
+    path = (audio_dir / filename).resolve()
+    if audio_dir.resolve() not in path.parents:
+        raise RuntimeError("invalid_audio_output_path")
+    path.write_bytes(audio_bytes)
+    return path
+
+
+def _room_audio_urls(room_id: str, filename: str) -> Dict[str, str]:
+    rid = quote(_safe_room_id(room_id), safe="")
+    name = quote(filename, safe="")
+    base = f"/api/rooms/{rid}/assets/audio/{name}"
+    return {
+        "playback_url": f"{base}?disposition=inline",
+        "download_url": f"{base}?disposition=attachment",
+    }
 
 
 def _safe_float(v: Any, default: Optional[float] = None) -> Optional[float]:
@@ -174,24 +246,30 @@ def _render_voices_response(items: list[Dict[str, Any]]) -> str:
 
 
 def _render_tts_response(result: Dict[str, Any]) -> str:
-    audio_base64 = _safe_str(result.get("audio_base64"))
-    audio_mime_type = _safe_str(result.get("audio_mime_type", "audio/mpeg"))
+    audio = _safe_dict(result.get("audio"))
+    playback_url = _safe_str(audio.get("playback_url"))
+    download_url = _safe_str(audio.get("download_url"))
+    filename = _safe_str(audio.get("filename") or "tts.mp3")
+    mime_type = _safe_str(audio.get("mime_type") or "audio/mpeg")
+    size_bytes = int(audio.get("size_bytes") or 0)
+
     voice = _safe_str(result.get("voice"))
     model = _safe_str(result.get("model"))
     response_format = _safe_str(result.get("response_format", "mp3"))
     character_count = result.get("character_count", 0)
-    filename = f"tts_{voice}_{character_count}chars.{response_format}"
+    size_kb = max(1, size_bytes // 1024) if size_bytes else 0
 
-    if audio_base64:
-        data_url = f"data:{audio_mime_type};base64,{audio_base64}"
-        size_kb = len(audio_base64) * 3 // 4 // 1024
+    if playback_url and download_url:
         lines = [
-            f'<audio controls src="{data_url}" style="width:100%;max-width:520px;display:block;margin:8px 0"></audio>',
+            f'<audio controls src="{playback_url}" style="width:100%;max-width:520px;display:block;margin:8px 0"></audio>',
             "",
-            f'<button class="nisb-audio-download-btn" type="button" data-nisb-audio-b64="{audio_base64}" data-nisb-audio-mime="{audio_mime_type}" data-nisb-audio-name="{filename}"><span class="nisb-audio-download-icon">⬇</span><span>下载音频 / Download audio</span><span class="nisb-audio-download-size">{size_kb} KB</span></button>',
+            f'<a href="{download_url}" download="{filename}">下载音频 / Download audio</a>',
             "",
             "<details><summary>详细信息 / Details</summary>",
             "",
+            f"- filename: `{filename}`",
+            f"- mime_type: `{mime_type}`",
+            f"- size: {size_kb} KB",
             f"- voice: `{voice}`",
             f"- model: `{model}`",
             f"- format: `{response_format}`",
@@ -201,7 +279,7 @@ def _render_tts_response(result: Dict[str, Any]) -> str:
         ]
     else:
         lines = [
-            "OpenAI TTS: audio generated but no base64 data available.",
+            "OpenAI TTS: audio generated, but no playback URL is available.",
             f"- voice: `{voice}`",
             f"- model: `{model}`",
         ]
@@ -305,22 +383,39 @@ def execute_room_mcp_provider_openai_tts(
                 payload["speed"] = speed
 
             audio_bytes = _request_bytes(api_key, payload)
-            audio_base64 = base64.b64encode(audio_bytes).decode("ascii")
-            audio_mime_type = _MIME_BY_FORMAT.get(response_format, "application/octet-stream")
+            audio_ext = _safe_audio_ext(response_format)
+            audio_mime_type = _MIME_BY_FORMAT.get(audio_ext, "application/octet-stream")
+            filename = _make_audio_filename(voice=voice, response_format=audio_ext, text=text)
+            saved_path = _write_room_audio_file(room_id, audio_bytes, filename=filename)
+            urls = _room_audio_urls(room_id, filename)
+
+            audio_meta = {
+                "scope": "room",
+                "room_id": _safe_room_id(room_id),
+                "relative_path": f"assets/audio/{filename}",
+                "filename": filename,
+                "mime_type": audio_mime_type,
+                "playback_url": urls["playback_url"],
+                "download_url": urls["download_url"],
+                "size_bytes": len(audio_bytes),
+                "duration_seconds": None,
+            }
 
             result = {
-                "audio_base64": audio_base64,
-                "saved_file_path": "",
-                "audio_url": "",
+                "result_type": "audio",
+                "asset_type": "audio",
+                "audio": audio_meta,
+                "saved_file_path": str(saved_path),
+                "audio_url": urls["playback_url"],
                 "audio_mime_type": audio_mime_type,
                 "duration": None,
                 "voice": voice,
                 "voice_id": voice,
                 "model": model,
                 "model_id": model,
-                "response_format": response_format,
+                "response_format": audio_ext,
                 "character_count": len(text),
-                "usage_note": "Audio is returned inline as base64 in the Room tool result; no public workspace file was written.",
+                "usage_note": "Audio was saved as a room-scoped server file; Room events store only playback/download URLs and metadata.",
                 "risk_note": "Confirm OpenAI usage terms, disclosure requirements, and YouTube monetization policy before publishing.",
             }
 
@@ -394,4 +489,3 @@ def execute_room_mcp_provider_openai_tts(
 
 
 __all__ = ["execute_room_mcp_provider_openai_tts"]
-
