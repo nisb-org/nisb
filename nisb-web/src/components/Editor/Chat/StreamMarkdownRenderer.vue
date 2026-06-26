@@ -72,14 +72,14 @@ const { t } = useI18n()
 async function handle_nisb_audio_download_click(e) {
   const target = e?.target
   const btn = target && typeof target.closest === 'function'
-    ? target.closest('[data-nisb-audio-b64], [data-nisb-audio-url]')
+    ? target.closest('[data-nisb-audio-url]')
     : null
   if (!btn) return
 
   e.preventDefault()
   e.stopPropagation()
 
-  const b64 = btn.getAttribute('data-nisb-audio-b64') || ''
+  const b64 = ''
   const remoteUrl = btn.getAttribute('data-nisb-audio-url') || ''
   const mime = btn.getAttribute('data-nisb-audio-mime') || 'audio/mpeg'
   const name = btn.getAttribute('data-nisb-audio-name') || 'audio.mp3'
@@ -696,4 +696,3 @@ const show_placeholder = computed(() => {
   transform: none;
 }
 </style>
-
