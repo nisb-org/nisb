@@ -337,7 +337,7 @@ function renderChunkToSafeHtml(mdText, chunkIndex) {
     return DOMPurify.sanitize(html, {
       USE_PROFILES: { html: true },
       ALLOW_UNKNOWN_PROTOCOLS: true,
-      ADD_ATTR: ['id', 'data-heading-anchor', 'data-heading-key', 'controls', 'autoplay', 'download', 'data-nisb-audio-b64', 'data-nisb-audio-url', 'data-nisb-audio-mime', 'data-nisb-audio-name']
+      ADD_ATTR: ['id', 'data-heading-anchor', 'data-heading-key', 'controls', 'autoplay', 'download', 'data-nisb-audio-url', 'data-nisb-audio-mime', 'data-nisb-audio-name']
     })
   } catch {
     return `<p>${_escape_html_text(t('note.reader.lazyMarkdown.renderFailed'))}</p>`
@@ -937,14 +937,14 @@ watch(
 async function handle_nisb_audio_download_click(e) {
   const target = e?.target
   const btn = target && typeof target.closest === 'function'
-    ? target.closest('[data-nisb-audio-b64], [data-nisb-audio-url]')
+    ? target.closest('[data-nisb-audio-url]')
     : null
   if (!btn) return
 
   e.preventDefault()
   e.stopPropagation()
 
-  const b64 = btn.getAttribute('data-nisb-audio-b64') || ''
+  const b64 = ''
   const remoteUrl = btn.getAttribute('data-nisb-audio-url') || ''
   const mime = btn.getAttribute('data-nisb-audio-mime') || 'audio/mpeg'
   const name = btn.getAttribute('data-nisb-audio-name') || 'audio.mp3'
@@ -1240,4 +1240,3 @@ defineExpose({ jumpTo })
   }
 }
 </style>
-
