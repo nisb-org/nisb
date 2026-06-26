@@ -27,7 +27,9 @@ import traceback
 import mimetypes
 import time
 import subprocess
+import re
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 import anyio
@@ -123,6 +125,61 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(AttachUseridASGIMiddleware)
+
+_ROOM_ASSET_ROOM_ID_RE = re.compile(r"^[A-Za-z0-9_.-]{1,120}$")
+_ROOM_ASSET_FILENAME_RE = re.compile(r"^[A-Za-z0-9_.-]{1,180}$")
+_ROOM_AUDIO_MIME_BY_EXT = {
+    ".mp3": "audio/mpeg",
+    ".wav": "audio/wav",
+    ".aac": "audio/aac",
+    ".flac": "audio/flac",
+    ".opus": "audio/opus",
+}
+
+
+def _room_asset_data_root() -> Path:
+    return Path(os.environ.get("NISB_BASE_PATH", "/data").rstrip("/") or "/data").resolve()
+
+
+def _safe_room_asset_component(value: str, *, kind: str) -> str:
+    raw = str(value or "").strip()
+    pattern = _ROOM_ASSET_ROOM_ID_RE if kind == "room_id" else _ROOM_ASSET_FILENAME_RE
+    if not raw or "/" in raw or "\\" in raw or ".." in raw or not pattern.match(raw):
+        raise HTTPException(status_code=400, detail=f"invalid_{kind}")
+    return raw
+
+
+@app.get("/api/rooms/{room_id}/assets/audio/{filename}")
+@app.get("/rooms/{room_id}/assets/audio/{filename}")
+async def get_room_audio_asset(room_id: str, filename: str, disposition: str = "inline"):
+    rid = _safe_room_asset_component(room_id, kind="room_id")
+    name = _safe_room_asset_component(filename, kind="filename")
+
+    ext = Path(name).suffix.lower()
+    mime_type = _ROOM_AUDIO_MIME_BY_EXT.get(ext)
+    if not mime_type:
+        raise HTTPException(status_code=400, detail="unsupported_audio_type")
+
+    base = _room_asset_data_root()
+    audio_dir = (base / "shared" / "rooms" / rid / "assets" / "audio").resolve()
+    path = (audio_dir / name).resolve()
+
+    if audio_dir not in path.parents:
+        raise HTTPException(status_code=400, detail="invalid_audio_path")
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="audio_not_found")
+
+    disp = "attachment" if str(disposition or "").lower() == "attachment" else "inline"
+    return FileResponse(
+        path=str(path),
+        media_type=mime_type,
+        filename=name,
+        headers={
+            "Content-Disposition": f'{disp}; filename="{name}"',
+            "Cache-Control": "private, max-age=3600",
+        },
+    )
+
 
 WHITELIST_TOOLS = [
     "nisb_user_register",
@@ -1808,4 +1865,3 @@ except Exception as e:
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8006)
-
