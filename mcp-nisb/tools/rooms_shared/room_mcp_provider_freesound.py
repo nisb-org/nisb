@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import html
 import json
 import os
+import re
 from typing import Any, Dict, Optional
 from urllib.error import HTTPError
 from urllib.parse import urlencode
@@ -15,6 +17,8 @@ from .room_request_bridge import _safe_dict, _safe_list, _safe_str
 _FREESOUND_RISK_NOTE = (
     "Freesound licenses vary by sound. Free preview/download does not automatically mean commercial or YouTube-safe use."
 )
+
+_AUDIO_EXTENSIONS = (".mp3", ".ogg", ".wav", ".aac", ".flac")
 
 
 def _safe_int(v: Any, default: int = 0, minimum: Optional[int] = None, maximum: Optional[int] = None) -> int:
@@ -89,6 +93,27 @@ def _sanitize_error(error: Any, *secrets: str) -> str:
         if secret:
             out = out.replace(secret, "<redacted>")
     return out
+
+
+def _html_attr(value: Any) -> str:
+    return html.escape(_safe_str(value), quote=True)
+
+
+def _html_text(value: Any) -> str:
+    return html.escape(_safe_str(value), quote=False)
+
+
+def _safe_download_filename(value: Any, fallback: str = "freesound_preview.mp3") -> str:
+    raw = _clean_text(value) or fallback
+    raw = raw.replace("/", "_").replace("\\", "_").replace("\x00", "")
+    raw = re.sub(r"\s+", " ", raw).strip()
+    raw = re.sub(r'[<>:"|?*]+', "_", raw)
+    raw = raw[:160].strip(" ._") or fallback
+
+    lower = raw.lower()
+    if not lower.endswith(_AUDIO_EXTENSIONS):
+        raw = f"{raw}.mp3"
+    return raw
 
 
 def _provider_error_packet(
@@ -257,17 +282,18 @@ def _normalize_sound_item(item: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _render_audio_controls(preview_url: str, filename: str, label: str = "Download audio") -> str:
+def _render_audio_controls(preview_url: str, filename: str, label: str = "下载音频 / Download audio") -> str:
     url = _safe_str(preview_url)
-    name = _safe_str(filename) or "freesound_preview.mp3"
-    button_label = _safe_str(label) or "Download audio"
     if not url:
         return ""
 
+    name = _safe_download_filename(filename)
+    link_label = _safe_str(label) or "下载音频 / Download audio"
+
     return "\n".join(
         [
-            f'<audio controls src="{url}" style="width:100%;max-width:520px;display:block;margin:8px 0"></audio>',
-            f'<button class="nisb-audio-download-btn" type="button" data-nisb-audio-url="{url}" data-nisb-audio-mime="audio/mpeg" data-nisb-audio-name="{name}"><span class="nisb-audio-download-icon">⬇</span><span>{button_label}</span></button>',
+            f'<audio controls src="{_html_attr(url)}" style="width:100%;max-width:520px;display:block;margin:8px 0"></audio>',
+            f'<a href="{_html_attr(url)}" download="{_html_attr(name)}">{_html_text(link_label)}</a>',
         ]
     )
 
@@ -280,14 +306,12 @@ def _render_response(tool_name: str, query: str, items: list[Dict[str, Any]]) ->
     for index, item in enumerate(items, start=1):
         title = _safe_str(item.get("name") or f"Sound {index}")
         preview_url = _safe_str(item.get("preview_url"))
-        filename = title
-        if filename and not filename.lower().endswith((".mp3", ".ogg", ".wav", ".aac", ".flac")):
-            filename = f"{filename}.mp3"
+        filename = _safe_download_filename(title)
 
-        lines.append(f"### {index}. {title}")
+        lines.append(f"### {index}. {_html_text(title)}")
 
         if preview_url:
-            lines.append(_render_audio_controls(preview_url, filename, "Download audio"))
+            lines.append(_render_audio_controls(preview_url, filename, "下载音频 / Download audio"))
 
         if _safe_str(item.get("url")):
             lines.append(f"- Page: {_safe_str(item.get('url'))}")
@@ -484,4 +508,3 @@ def execute_room_mcp_provider_freesound(
 
 
 __all__ = ["execute_room_mcp_provider_freesound"]
-
